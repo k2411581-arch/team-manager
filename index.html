@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>チーム管理 — アメフト部</title>
+<title>CRUSHERS</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
 :root {
@@ -255,8 +255,8 @@ tr:hover td { background: rgba(255,255,255,0.02); }
   <!-- Sidebar -->
   <aside class="sidebar">
     <div class="sidebar-logo">
-      <div class="logo-text">🏈 チーム管理</div>
-      <div class="logo-sub">アメリカンフットボール部</div>
+      <div class="logo-text">🏈 CRUSHERS</div>
+      <div class="logo-sub">American Football Club</div>
     </div>
     <nav class="sidebar-nav">
       <div class="nav-section">メイン</div>
@@ -288,7 +288,7 @@ tr:hover td { background: rgba(255,255,255,0.02); }
       </div>
       <div class="nav-section">設定</div>
       <div class="nav-item" onclick="navigate('exercisemgr')">
-        <span class="nav-icon">⚙️</span> 種目管理
+        <span class="nav-icon">⚙️</span> 筋トレ種目管理
       </div>
       <div class="nav-section">分析</div>
       <div class="nav-item" onclick="navigate('analytics')">
@@ -474,6 +474,9 @@ function init() {
   syncFromSheets().then(() => {
     const renderers = { dashboard, players, attendance, fieldtest, maxtest, weight, analytics, live, exercisemgr, condition };
     if (renderers[state.currentSection]) renderers[state.currentSection]();
+  }).catch(() => {
+    const renderers = { dashboard, players, attendance, fieldtest, maxtest, weight, analytics, live, exercisemgr, condition };
+    if (renderers[state.currentSection]) renderers[state.currentSection]();
   });
   // リアルタイム同期: 30秒ごとにliveTrainingをシートから取得
   setInterval(syncLiveTraining, 5000);
@@ -505,7 +508,7 @@ const SECTION_TITLES = {
   weight: '体重管理',
   analytics: '選手詳細',
   live: '筋トレ管理',
-  exercisemgr: '種目管理',
+  exercisemgr: '筋トレ種目管理',
   condition: 'コンディション管理',
 };
 
@@ -800,6 +803,9 @@ function editPlayer(id) {
       <div class="form-group"><label class="form-label">身長 (cm)</label><input class="form-input" type="number" id="f-height" placeholder="175" value="${p.height||''}" min="100" max="250" step="0.1" /></div>
       <div class="form-group"></div>
     </div>
+    <div class="form-group"><label class="form-label">コメント・メモ</label>
+      <textarea class="form-input" id="f-comment" placeholder="ポジション特性、特記事項など..." rows="3" style="resize:vertical">${p.comment||''}</textarea>
+    </div>
     <div class="form-row form-row-2">
       <div class="form-group"><label class="form-label">ポジション</label>
         <div style="display:flex;flex-wrap:wrap;gap:2px;padding:8px;background:var(--surface2);border:1px solid var(--border2);border-radius:var(--radius)"><label style=\"display:inline-flex;align-items:center;gap:4px;margin-right:8px;margin-bottom:4px;font-size:13px;cursor:pointer\"><input type=\"checkbox\" class=\"pos-check\" value=\"QB\" ${(Array.isArray(p.position)?p.position:[p.position]).includes('QB')?'checked':''}> QB</label><label style=\"display:inline-flex;align-items:center;gap:4px;margin-right:8px;margin-bottom:4px;font-size:13px;cursor:pointer\"><input type=\"checkbox\" class=\"pos-check\" value=\"RB\" ${(Array.isArray(p.position)?p.position:[p.position]).includes('RB')?'checked':''}> RB</label><label style=\"display:inline-flex;align-items:center;gap:4px;margin-right:8px;margin-bottom:4px;font-size:13px;cursor:pointer\"><input type=\"checkbox\" class=\"pos-check\" value=\"WR\" ${(Array.isArray(p.position)?p.position:[p.position]).includes('WR')?'checked':''}> WR</label><label style=\"display:inline-flex;align-items:center;gap:4px;margin-right:8px;margin-bottom:4px;font-size:13px;cursor:pointer\"><input type=\"checkbox\" class=\"pos-check\" value=\"OL\" ${(Array.isArray(p.position)?p.position:[p.position]).includes('OL')?'checked':''}> OL</label><label style=\"display:inline-flex;align-items:center;gap:4px;margin-right:8px;margin-bottom:4px;font-size:13px;cursor:pointer\"><input type=\"checkbox\" class=\"pos-check\" value=\"DL\" ${(Array.isArray(p.position)?p.position:[p.position]).includes('DL')?'checked':''}> DL</label><label style=\"display:inline-flex;align-items:center;gap:4px;margin-right:8px;margin-bottom:4px;font-size:13px;cursor:pointer\"><input type=\"checkbox\" class=\"pos-check\" value=\"LB\" ${(Array.isArray(p.position)?p.position:[p.position]).includes('LB')?'checked':''}> LB</label><label style=\"display:inline-flex;align-items:center;gap:4px;margin-right:8px;margin-bottom:4px;font-size:13px;cursor:pointer\"><input type=\"checkbox\" class=\"pos-check\" value=\"DB\" ${(Array.isArray(p.position)?p.position:[p.position]).includes('DB')?'checked':''}> DB</label><label style=\"display:inline-flex;align-items:center;gap:4px;margin-right:8px;margin-bottom:4px;font-size:13px;cursor:pointer\"><input type=\"checkbox\" class=\"pos-check\" value=\"TE\" ${(Array.isArray(p.position)?p.position:[p.position]).includes('TE')?'checked':''}> TE</label><label style=\"display:inline-flex;align-items:center;gap:4px;margin-right:8px;margin-bottom:4px;font-size:13px;cursor:pointer\"><input type=\"checkbox\" class=\"pos-check\" value=\"K\" ${(Array.isArray(p.position)?p.position:[p.position]).includes('K')?'checked':''}> K</label></div>
@@ -819,6 +825,7 @@ function saveEditPlayer(id) {
   p.position = [...document.querySelectorAll('.pos-check:checked')].map(c=>c.value);
   p.grade = parseInt(document.getElementById('f-grade').value);
   p.height = parseFloat(document.getElementById('f-height').value) || null;
+  p.comment = document.getElementById('f-comment') ? document.getElementById('f-comment').value : (p.comment||'');
   saveData('players', state.players);
   closeModal();
   showToast('選手情報を更新しました');
@@ -1884,14 +1891,18 @@ function renderPlayerDetail(playerId) {
   });
 
   setContent(`
-    <div style="display:flex;align-items:center;gap:10px;margin-bottom:1.5rem">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:1rem">
       <button class="btn btn-ghost btn-sm" onclick="analyticsPlayer=null;renderAnalyticsPlayerSelect()">← 戻る</button>
       <div class="player-avatar" style="background:${avatarColor(parseInt(p.id.slice(1)))};width:44px;height:44px;font-size:16px">${initials(p.name)}</div>
       <div>
         <div style="font-size:20px;font-weight:700">${p.name}</div>
-        <div style="font-size:13px;color:var(--text3)">${p.grade}年 / ${(Array.isArray(p.position)?p.position:[p.position]).join("/")} / #${p.number}</div>
+        <div style="font-size:13px;color:var(--text3)">${p.grade}年 / ${(Array.isArray(p.position)?p.position:[p.position]).join("/")} / #${p.number}${p.height ? ' / ' + p.height + 'cm' : ''}</div>
       </div>
     </div>
+    ${p.comment ? `<div class="card" style="margin-bottom:1rem;border-left:3px solid var(--accent)">
+      <div style="font-size:12px;font-weight:600;color:var(--text3);margin-bottom:4px">コメント</div>
+      <div style="font-size:14px;line-height:1.7;white-space:pre-wrap">${p.comment}</div>
+    </div>` : ''}
     <div class="stats-row">
       <div class="stat-card">
         <div class="stat-label">出席率</div>
@@ -2772,7 +2783,8 @@ function deleteCondEvent(id) {
   state.conditionChecks = (state.conditionChecks||[]).filter(c => !toDelete.has(c.eventId));
   saveData('condEvents', state.condEvents);
   saveData('conditionChecks', state.conditionChecks);
-  condNavBack();
+  // 削除したフォルダがスタックにあれば全部消す
+  condNavStack = condNavStack.filter(s => !toDelete.has(s.id));
   showToast('削除しました', '🗑️');
   renderCondition();
 }
