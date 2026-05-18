@@ -359,6 +359,37 @@ function loadData(key, fallback = []) {
 }
 
 // Load all data from Google Sheets on startup
+// リアルタイム筋トレの他端末同期（30秒ごと）
+async function syncLiveTraining() {
+  if (state.currentSection !== 'live') return;
+  try {
+    const res = await fetch(GAS_URL + '?key=' + encodeURIComponent(STORAGE_KEY_PREFIX + 'liveTraining'));
+    const text = await res.text();
+    if (text && text.trim()) {
+      const remote = JSON.parse(text);
+      // 自分が開始したセッションは上書きしない
+      let changed = false;
+      Object.entries(remote).forEach(([pid, info]) => {
+        if (!state.liveTraining[pid]) {
+          state.liveTraining[pid] = info;
+          changed = true;
+        }
+      });
+      // リモートで終了したセッションを削除
+      Object.keys(state.liveTraining).forEach(pid => {
+        if (!remote[pid]) {
+          delete state.liveTraining[pid];
+          changed = true;
+        }
+      });
+      if (changed) {
+        saveData('liveTraining', state.liveTraining);
+        renderLive();
+      }
+    }
+  } catch(e) {}
+}
+
 async function syncFromSheets() {
   const keys = ['players','attendance','training','fieldtest','maxtest','weight','customExercises','playerExercises','customFieldTests','injuries','conditionChecks','condEvents'];
   const defaults = {
@@ -435,13 +466,18 @@ function init() {
   state.injuries = loadData('injuries', []);
   state.conditionChecks = loadData('conditionChecks', []);
   state.condEvents = loadData('condEvents', []);
-  navigate('dashboard');
+  // リロード対策: 進行中の筋トレを復元
+  state.liveTraining = loadData('liveTraining', {});
+  // リロード対策: 最後に開いていたページを復元
+  const lastSection = loadData('lastSection', 'dashboard');
+  navigate(typeof lastSection === 'string' ? lastSection : 'dashboard');
   // Then sync from Google Sheets in background
   syncFromSheets().then(() => {
-    // Re-render current section after sync
     const renderers = { dashboard, players, attendance, fieldtest, maxtest, weight, analytics, live, exercisemgr, condition };
     if (renderers[state.currentSection]) renderers[state.currentSection]();
   });
+  // リアルタイム同期: 30秒ごとにliveTrainingをシートから取得
+  setInterval(syncLiveTraining, 30000);
 }
 
 function getSamplePlayers() {
@@ -476,6 +512,8 @@ const SECTION_TITLES = {
 
 function navigate(section) {
   closeSidebar();
+  // ページを記憶（リロード対策）
+  try { localStorage.setItem(STORAGE_KEY_PREFIX + 'lastSection', JSON.stringify(section)); } catch(e) {}
   // 怪我管理ページから離れたら自動ロック
   if (state.currentSection === 'condition' && section !== 'condition') {
     injuryUnlocked = false;
@@ -2147,6 +2185,7 @@ function startLiveTimers() {
 function startTraining(playerId) {
   const p = getPlayer(playerId);
   state.liveTraining[playerId] = { startTime: new Date().toISOString(), exercises: [] };
+  saveData('liveTraining', state.liveTraining);
   showToast(`${p.name} 開始`, '▶');
   renderLive();
 }
@@ -2197,6 +2236,7 @@ function saveLiveExercise(playerId) {
     exercise: document.getElementById('lv-ex').value,
     sets: [..._lvSets],
   });
+  saveData('liveTraining', state.liveTraining);
   _lvSets = [];
   closeModal();
   renderLive();
@@ -2205,6 +2245,7 @@ function saveLiveExercise(playerId) {
 function removeLiveExercise(playerId, idx) {
   if (!state.liveTraining[playerId]) return;
   state.liveTraining[playerId].exercises.splice(idx, 1);
+  saveData('liveTraining', state.liveTraining);
   renderLive();
 }
 
