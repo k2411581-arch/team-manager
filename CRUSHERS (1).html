@@ -1,0 +1,2817 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>チーム管理 — アメフト部</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0f1117;
+  --surface: #181c27;
+  --surface2: #1e2333;
+  --surface3: #252b3d;
+  --border: rgba(255,255,255,0.07);
+  --border2: rgba(255,255,255,0.12);
+  --text: #e8ecf5;
+  --text2: #8b92a8;
+  --text3: #5a6278;
+  --accent: #4f9cf9;
+  --accent2: #3b82f6;
+  --green: #22d3a5;
+  --green2: #16a37e;
+  --red: #f87171;
+  --yellow: #fbbf24;
+  --purple: #a78bfa;
+  --orange: #fb923c;
+  --radius: 10px;
+  --radius-lg: 16px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Noto Sans JP', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; font-size: 14px; }
+
+/* Layout */
+.app { display: flex; height: 100vh; overflow: hidden; }
+.sidebar { width: 220px; background: var(--surface); border-right: 1px solid var(--border); display: flex; flex-direction: column; flex-shrink: 0; }
+.main { flex: 1; overflow: hidden; display: flex; flex-direction: column; }
+.content { flex: 1; overflow-y: auto; padding: 1.5rem; }
+
+/* Sidebar */
+.sidebar-logo { padding: 1.25rem 1rem; border-bottom: 1px solid var(--border); }
+.logo-text { font-size: 13px; font-weight: 700; color: var(--text); letter-spacing: 0.03em; }
+.logo-sub { font-size: 11px; color: var(--text3); margin-top: 2px; }
+.sidebar-nav { flex: 1; padding: 0.75rem 0; overflow-y: auto; }
+.nav-section { padding: 0.5rem 0.75rem 0.25rem; font-size: 10px; font-weight: 700; color: var(--text3); letter-spacing: 0.08em; text-transform: uppercase; }
+.nav-item { display: flex; align-items: center; gap: 8px; padding: 7px 1rem; cursor: pointer; font-size: 13px; color: var(--text2); border-left: 2px solid transparent; transition: all 0.15s; }
+.nav-item:hover { color: var(--text); background: var(--surface2); }
+.nav-item.active { color: var(--accent); border-left-color: var(--accent); background: rgba(79,156,249,0.07); }
+.nav-icon { font-size: 16px; width: 18px; text-align: center; }
+
+/* Topbar */
+.topbar { display: flex; align-items: center; justify-content: space-between; padding: 0.75rem 1.5rem; border-bottom: 1px solid var(--border); background: var(--surface); flex-shrink: 0; }
+.topbar-title { font-size: 16px; font-weight: 700; }
+.topbar-actions { display: flex; gap: 8px; align-items: center; }
+
+/* Buttons */
+.btn { display: inline-flex; align-items: center; gap: 6px; padding: 7px 14px; border-radius: var(--radius); border: none; cursor: pointer; font-size: 13px; font-family: inherit; font-weight: 500; transition: all 0.15s; }
+.btn-primary { background: var(--accent2); color: white; }
+.btn-primary:hover { background: #2563eb; }
+.btn-ghost { background: transparent; color: var(--text2); border: 1px solid var(--border2); }
+.btn-ghost:hover { background: var(--surface3); color: var(--text); }
+.btn-danger { background: transparent; color: var(--red); border: 1px solid rgba(248,113,113,0.3); }
+.btn-danger:hover { background: rgba(248,113,113,0.1); }
+.btn-green { background: var(--green2); color: white; }
+.btn-green:hover { background: #0f8a69; }
+.btn-sm { padding: 5px 10px; font-size: 12px; }
+.btn-xs { padding: 3px 8px; font-size: 11px; }
+
+/* Cards */
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 1.25rem; margin-bottom: 1rem; }
+.card-title { font-size: 14px; font-weight: 700; margin-bottom: 1rem; display: flex; align-items: center; justify-content: space-between; }
+.card-sm { padding: 1rem; border-radius: var(--radius); }
+
+/* Stats row */
+.stats-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; margin-bottom: 1.25rem; }
+.stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1rem; }
+.stat-label { font-size: 11px; color: var(--text3); font-weight: 500; margin-bottom: 4px; }
+.stat-val { font-size: 24px; font-weight: 700; font-family: 'DM Mono', monospace; }
+.stat-sub { font-size: 11px; color: var(--text3); margin-top: 2px; }
+
+/* Table */
+.table-wrap { overflow-x: auto; border-radius: var(--radius); border: 1px solid var(--border); }
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+th { background: var(--surface2); color: var(--text3); font-size: 11px; font-weight: 600; padding: 8px 12px; text-align: left; border-bottom: 1px solid var(--border); white-space: nowrap; }
+td { padding: 9px 12px; border-bottom: 1px solid var(--border); color: var(--text); vertical-align: middle; }
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: rgba(255,255,255,0.02); }
+.td-mono { font-family: 'DM Mono', monospace; font-size: 12px; }
+
+/* Badge */
+.badge { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+.badge-green { background: rgba(34,211,165,0.15); color: var(--green); }
+.badge-red { background: rgba(248,113,113,0.15); color: var(--red); }
+.badge-yellow { background: rgba(251,191,36,0.15); color: var(--yellow); }
+.badge-blue { background: rgba(79,156,249,0.15); color: var(--accent); }
+.badge-purple { background: rgba(167,139,250,0.15); color: var(--purple); }
+.badge-gray { background: rgba(255,255,255,0.06); color: var(--text3); }
+.badge-orange { background: rgba(251,146,60,0.15); color: var(--orange); }
+
+/* Form */
+.form-group { margin-bottom: 1rem; }
+.form-label { font-size: 12px; font-weight: 600; color: var(--text2); margin-bottom: 5px; display: block; }
+.form-input, .form-select { width: 100%; background: var(--surface2); border: 1px solid var(--border2); border-radius: var(--radius); padding: 8px 12px; color: var(--text); font-size: 13px; font-family: inherit; outline: none; transition: border 0.15s; }
+.form-input:focus, .form-select:focus { border-color: var(--accent); }
+.form-select option { background: var(--surface2); }
+.form-row { display: grid; gap: 12px; }
+.form-row-2 { grid-template-columns: 1fr 1fr; }
+.form-row-3 { grid-template-columns: 1fr 1fr 1fr; }
+.form-row-4 { grid-template-columns: 1fr 1fr 1fr 1fr; }
+
+/* Modal */
+.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: none; align-items: center; justify-content: center; z-index: 100; padding: 1rem; }
+.modal-overlay.open { display: flex; }
+.modal { background: var(--surface); border: 1px solid var(--border2); border-radius: var(--radius-lg); padding: 1.5rem; width: 100%; max-width: 520px; max-height: 90vh; overflow-y: auto; }
+.modal-title { font-size: 16px; font-weight: 700; margin-bottom: 1.25rem; display: flex; justify-content: space-between; align-items: center; }
+.modal-footer { display: flex; gap: 8px; justify-content: flex-end; margin-top: 1.25rem; padding-top: 1rem; border-top: 1px solid var(--border); }
+.close-btn { background: none; border: none; color: var(--text3); cursor: pointer; font-size: 20px; line-height: 1; }
+.close-btn:hover { color: var(--text); }
+
+/* Sections */
+.section { display: none; }
+.section.active { display: block; }
+
+/* Player avatar */
+.player-avatar { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; flex-shrink: 0; }
+
+/* Progress bar */
+.progress { background: var(--surface3); border-radius: 4px; height: 5px; overflow: hidden; }
+.progress-fill { height: 100%; border-radius: 4px; transition: width 0.5s ease; }
+
+/* Date picker row */
+.date-tabs { display: flex; gap: 6px; margin-bottom: 1rem; flex-wrap: wrap; align-items: center; }
+.date-tab { padding: 5px 12px; border-radius: 20px; font-size: 12px; cursor: pointer; border: 1px solid var(--border2); color: var(--text2); background: transparent; font-family: inherit; transition: all 0.15s; }
+.date-tab.active { background: var(--accent2); border-color: var(--accent2); color: white; }
+.date-input-sm { background: var(--surface2); border: 1px solid var(--border2); border-radius: var(--radius); padding: 5px 10px; color: var(--text); font-size: 12px; font-family: 'DM Mono', monospace; outline: none; }
+.date-input-sm:focus { border-color: var(--accent); }
+
+/* Loading */
+.loading { text-align: center; padding: 3rem; color: var(--text3); }
+
+/* Grid */
+.grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem; }
+.grid3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; }
+
+/* Search */
+.search-input { background: var(--surface2); border: 1px solid var(--border2); border-radius: var(--radius); padding: 7px 12px; color: var(--text); font-size: 13px; font-family: inherit; outline: none; width: 200px; }
+.search-input:focus { border-color: var(--accent); }
+
+/* Tabs */
+.tabs { display: flex; gap: 0; border-bottom: 1px solid var(--border); margin-bottom: 1.25rem; }
+.tab { padding: 8px 16px; font-size: 13px; cursor: pointer; color: var(--text3); border-bottom: 2px solid transparent; font-family: inherit; background: none; border-top: none; border-left: none; border-right: none; transition: all 0.15s; }
+.tab:hover { color: var(--text2); }
+.tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+/* Chart placeholder */
+.mini-chart { height: 60px; display: flex; align-items: flex-end; gap: 3px; padding: 0 0 2px; }
+.bar { flex: 1; border-radius: 3px 3px 0 0; min-height: 4px; transition: height 0.3s; }
+
+/* Toast */
+.toast { position: fixed; bottom: 1.5rem; right: 1.5rem; background: var(--surface); border: 1px solid var(--border2); border-radius: var(--radius); padding: 0.75rem 1.25rem; font-size: 13px; display: none; align-items: center; gap: 8px; z-index: 200; box-shadow: 0 8px 32px rgba(0,0,0,0.4); }
+.toast.show { display: flex; }
+.toast-icon { font-size: 16px; }
+
+/* Empty state */
+.empty { text-align: center; padding: 2.5rem; color: var(--text3); }
+.empty-icon { font-size: 40px; margin-bottom: 0.75rem; }
+.empty-text { font-size: 14px; }
+
+/* Scrollbar */
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--surface3); border-radius: 4px; }
+
+/* Responsive */
+/* ハンバーガーボタン */
+.hamburger { display: none; background: none; border: none; color: var(--text); font-size: 22px; cursor: pointer; padding: 4px 8px; line-height: 1; }
+.sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 49; }
+
+@media (max-width: 700px) {
+  /* サイドバーをスライドオーバーに */
+  .sidebar {
+    position: fixed; top: 0; left: 0; height: 100vh; z-index: 50;
+    transform: translateX(-100%); transition: transform 0.25s ease;
+    width: 240px;
+  }
+  .sidebar.open { transform: translateX(0); }
+  .sidebar-overlay.open { display: block; }
+  .hamburger { display: block; }
+
+  /* レイアウト */
+  .app { flex-direction: column; }
+  .main { width: 100%; }
+  .topbar { padding: 0.6rem 0.75rem; gap: 8px; }
+  .topbar-title { font-size: 15px; }
+  .topbar-actions { gap: 4px; flex-wrap: wrap; justify-content: flex-end; }
+  .topbar-actions .btn { padding: 6px 10px; font-size: 12px; }
+  .topbar-actions .search-input { width: 130px; font-size: 12px; }
+  .topbar-actions .date-input-sm { font-size: 11px; padding: 4px 6px; }
+  .content { padding: 0.75rem; }
+
+  /* グリッド */
+  .form-row-3, .form-row-4 { grid-template-columns: 1fr 1fr; }
+  .form-row-2 { grid-template-columns: 1fr; }
+  .grid2, .grid3 { grid-template-columns: 1fr; }
+  .stats-row { grid-template-columns: repeat(2, 1fr); }
+
+  /* テーブル */
+  .table-wrap { font-size: 12px; }
+  th, td { padding: 6px 8px; }
+
+  /* カード */
+  .card { padding: 0.9rem; }
+
+  /* モーダル */
+  .modal { padding: 1rem; margin: 0.5rem; }
+  .modal-overlay { align-items: flex-end; padding: 0; }
+  .modal { border-radius: var(--radius-lg) var(--radius-lg) 0 0; max-height: 92vh; }
+
+  /* ボタン */
+  .btn-xs { padding: 4px 8px; font-size: 11px; }
+  .btn-sm { padding: 6px 10px; font-size: 12px; }
+
+  /* タブ */
+  .tab { padding: 8px 10px; font-size: 12px; }
+
+  /* キーボード上にコンテンツが隠れないように */
+  .content { padding-bottom: 2rem; }
+}
+
+.trend-up { color: var(--green); font-size: 11px; }
+.trend-down { color: var(--red); font-size: 11px; }
+.detail-section { margin-bottom: 1.5rem; }
+.detail-section-title { font-size: 12px; font-weight: 700; color: var(--text3); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 0.75rem; }
+</style>
+</head>
+<body>
+<div class="app">
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-text">🏈 チーム管理</div>
+      <div class="logo-sub">アメリカンフットボール部</div>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-section">メイン</div>
+      <div class="nav-item active" onclick="navigate('dashboard')">
+        <span class="nav-icon">📊</span> ダッシュボード
+      </div>
+      <div class="nav-item" onclick="navigate('players')">
+        <span class="nav-icon">👥</span> 選手一覧
+      </div>
+      <div class="nav-section">記録入力</div>
+      <div class="nav-item" onclick="navigate('attendance')">
+        <span class="nav-icon">📋</span> 出席管理
+      </div>
+      <div class="nav-item" id="nav-live" onclick="navigate('live')">
+        <span class="nav-icon">🏋️</span> 筋トレ管理
+      </div>
+      <div class="nav-item" onclick="navigate('fieldtest')">
+        <span class="nav-icon">🏃</span> フィールドテスト
+      </div>
+      <div class="nav-item" onclick="navigate('maxtest')">
+        <span class="nav-icon">📈</span> MAX測定
+      </div>
+      <div class="nav-item" onclick="navigate('weight')">
+        <span class="nav-icon">⚖️</span> 体重管理
+      </div>
+      <div class="nav-section">コンディション</div>
+      <div class="nav-item" onclick="navigate('condition')">
+        <span class="nav-icon">🏥</span> コンディション管理
+      </div>
+      <div class="nav-section">設定</div>
+      <div class="nav-item" onclick="navigate('exercisemgr')">
+        <span class="nav-icon">⚙️</span> 種目管理
+      </div>
+      <div class="nav-section">分析</div>
+      <div class="nav-item" onclick="navigate('analytics')">
+        <span class="nav-icon">🔍</span> 選手詳細
+      </div>
+    </nav>
+  </aside>
+
+  <!-- Main -->
+  <div class="main">
+    <div class="topbar">
+      <button class="hamburger" onclick="toggleSidebar()" aria-label="メニュー">☰</button>
+      <div class="topbar-title" id="topbar-title">ダッシュボード</div>
+      <div class="topbar-actions" id="topbar-actions"></div>
+    </div>
+    <div class="content" id="content">
+      <div class="loading">読み込み中...</div>
+    </div>
+  </div>
+</div>
+
+<!-- Sidebar overlay -->
+<div class="sidebar-overlay" id="sidebar-overlay" onclick="closeSidebar()"></div>
+
+<!-- Toast -->
+<div class="toast" id="toast">
+  <span class="toast-icon" id="toast-icon">✅</span>
+  <span id="toast-msg">保存しました</span>
+</div>
+
+<!-- Modals -->
+<div class="modal-overlay" id="modal-overlay" onclick="if(event.target===this)closeModal()">
+  <div class="modal" id="modal">
+    <div class="modal-title">
+      <span id="modal-title-text">タイトル</span>
+      <button class="close-btn" onclick="closeModal()">×</button>
+    </div>
+    <div id="modal-body"></div>
+    <div class="modal-footer" id="modal-footer"></div>
+  </div>
+</div>
+
+<script>
+// ========== STORAGE ==========
+const STORAGE_KEY_PREFIX = 'football_team_';
+
+// ========== GOOGLE SHEETS STORAGE ==========
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbwIYo-mU6fFznB9gqBh-mnITemGFA8xiDtedu19-0uoTM42qWhiEyR0xJQT-jvx9DTBSQ/exec';
+const _memStore = {};
+
+function saveData(key, data) {
+  _memStore[key] = data;
+  try { localStorage.setItem(STORAGE_KEY_PREFIX + key, JSON.stringify(data)); } catch(e) {}
+  // Async sync to Google Sheets
+  fetch(GAS_URL, {
+    method: 'POST',
+    body: JSON.stringify({ key: STORAGE_KEY_PREFIX + key, value: JSON.stringify(data) }),
+  }).catch(() => {});
+}
+
+function loadData(key, fallback = []) {
+  if (_memStore[key] !== undefined) return _memStore[key];
+  try {
+    const val = localStorage.getItem(STORAGE_KEY_PREFIX + key);
+    if (val) return JSON.parse(val);
+  } catch(e) {}
+  return fallback;
+}
+
+// Load all data from Google Sheets on startup
+async function syncFromSheets() {
+  const keys = ['players','attendance','training','fieldtest','maxtest','weight','customExercises','playerExercises','customFieldTests','injuries','conditionChecks','condEvents'];
+  const defaults = {
+    players: getSamplePlayers(), attendance: [], training: [], fieldtest: [],
+    maxtest: [], weight: [], customExercises: {}, playerExercises: {},
+    customFieldTests: [], injuries: [], conditionChecks: [], condEvents: []
+  };
+  showSyncStatus('☁️ データを同期中...');
+  let loaded = 0;
+  await Promise.all(keys.map(async key => {
+    try {
+      const res = await fetch(GAS_URL + '?key=' + encodeURIComponent(STORAGE_KEY_PREFIX + key));
+      const text = await res.text();
+      if (text && text.trim()) {
+        const parsed = JSON.parse(text);
+        _memStore[key] = parsed;
+        state[key] = parsed;
+        try { localStorage.setItem(STORAGE_KEY_PREFIX + key, text); } catch(e) {}
+        loaded++;
+      } else {
+        state[key] = loadData(key, defaults[key]);
+      }
+    } catch(e) {
+      state[key] = loadData(key, defaults[key]);
+    }
+  }));
+  showSyncStatus(loaded > 0 ? '✅ 同期完了' : '📱 オフラインモード', true);
+}
+
+function showSyncStatus(msg, fadeOut) {
+  let el = document.getElementById('sync-status');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'sync-status';
+    el.style.cssText = 'position:fixed;bottom:1.5rem;left:50%;transform:translateX(-50%);background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius);padding:8px 18px;font-size:13px;z-index:300;box-shadow:0 4px 16px rgba(0,0,0,0.3);transition:opacity 0.5s';
+    document.body.appendChild(el);
+  }
+  el.textContent = msg;
+  el.style.opacity = '1';
+  el.style.display = 'block';
+  if (fadeOut) setTimeout(() => { el.style.opacity = '0'; setTimeout(() => el.style.display='none', 500); }, 2000);
+}
+
+// ========== STATE ==========
+let state = {
+  players: [],
+  attendance: [],
+  training: [],
+  fieldtest: [],
+  maxtest: [],
+  weight: [],
+  currentSection: 'dashboard',
+  liveTraining: {}, // playerId -> { startTime: ISO string }
+  customExercises: {}, // category -> [name, ...]
+  playerExercises: {}, // playerId -> { cat: [name,...], __deleted__: [...] }
+  customFieldTests: [], // user-added field test names
+  injuries: [], // injury records
+  conditionChecks: [], // condition check records
+  condEvents: [], // condition check event folders
+};
+
+// ========== INIT ==========
+function init() {
+  // Load from localStorage first for instant render
+  state.players = loadData('players', getSamplePlayers());
+  state.attendance = loadData('attendance', []);
+  state.training = loadData('training', []);
+  state.fieldtest = loadData('fieldtest', []);
+  state.maxtest = loadData('maxtest', []);
+  state.weight = loadData('weight', []);
+  state.customExercises = loadData('customExercises', {});
+  state.playerExercises = loadData('playerExercises', {});
+  state.customFieldTests = loadData('customFieldTests', []);
+  state.injuries = loadData('injuries', []);
+  state.conditionChecks = loadData('conditionChecks', []);
+  state.condEvents = loadData('condEvents', []);
+  navigate('dashboard');
+  // Then sync from Google Sheets in background
+  syncFromSheets().then(() => {
+    // Re-render current section after sync
+    const renderers = { dashboard, players, attendance, fieldtest, maxtest, weight, analytics, live, exercisemgr, condition };
+    if (renderers[state.currentSection]) renderers[state.currentSection]();
+  });
+}
+
+function getSamplePlayers() {
+  const positions = ['QB', 'RB', 'WR', 'OL', 'DL', 'LB', 'DB', 'TE', 'K'];
+  const grades = [1, 2, 3, 4];
+  const names = ['田中 翔太','山田 大輝','鈴木 健斗','佐藤 龍之介','伊藤 拓海','渡辺 颯太','中村 陸','小林 悠斗','加藤 蓮','吉田 瞬',
+    '山口 湊','松本 颯','井上 大和','木村 陽斗','林 蒼','清水 海斗','山崎 凜','中島 翼','池田 悠','石川 航',
+    '斎藤 光','藤田 俊','小川 涼太','岡田 誠','長谷川 遥斗','石田 創','橋本 匠','西田 快','岩田 漣','山本 颯一郎'];
+  return names.map((name, i) => ({
+    id: 'p' + (i + 1),
+    name,
+    number: String(i + 1).padStart(2, '0'),
+    position: [positions[i % positions.length]],
+    grade: grades[i % grades.length],
+    createdAt: new Date().toISOString(),
+  }));
+}
+
+// ========== NAVIGATION ==========
+const SECTION_TITLES = {
+  dashboard: 'ダッシュボード',
+  players: '選手一覧',
+  attendance: '出席管理',
+  fieldtest: 'フィールドテスト',
+  maxtest: 'MAX測定',
+  weight: '体重管理',
+  analytics: '選手詳細',
+  live: '筋トレ管理',
+  exercisemgr: '種目管理',
+  condition: 'コンディション管理',
+};
+
+function navigate(section) {
+  closeSidebar();
+  // 怪我管理ページから離れたら自動ロック
+  if (state.currentSection === 'condition' && section !== 'condition') {
+    injuryUnlocked = false;
+    injurySearch = '';
+  }
+  state.currentSection = section;
+  document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+  const navItems = document.querySelectorAll('.nav-item');
+  navItems.forEach(el => {
+    if (el.textContent.trim().includes(SECTION_TITLES[section]?.slice(0, 4))) {
+      el.classList.add('active');
+    }
+  });
+  document.getElementById('topbar-title').textContent = SECTION_TITLES[section] || section;
+  const renderers = { dashboard, players, attendance, fieldtest, maxtest, weight, analytics, live, exercisemgr, condition };
+  if (renderers[section]) renderers[section]();
+}
+
+// ========== SIDEBAR MOBILE ==========
+function toggleSidebar() {
+  const sb = document.querySelector('.sidebar');
+  const ov = document.getElementById('sidebar-overlay');
+  if (!sb) return;
+  const isOpen = sb.classList.contains('open');
+  if (isOpen) { sb.classList.remove('open'); if (ov) ov.classList.remove('open'); }
+  else { sb.classList.add('open'); if (ov) ov.classList.add('open'); }
+}
+function closeSidebar() {
+  const sb = document.querySelector('.sidebar');
+  const ov = document.getElementById('sidebar-overlay');
+  if (sb) sb.classList.remove('open');
+  if (ov) ov.classList.remove('open');
+}
+
+// ========== UTILITIES ==========
+
+function rebuildTrainingExSelect() {
+  const pid = document.getElementById('f-tr-player') ? document.getElementById('f-tr-player').value : null;
+  const container = document.getElementById('f-tr-ex-wrap');
+  if (!container) return;
+  container.innerHTML = makeExerciseCategorySelect('f-tr-ex', pid);
+}
+
+function toggleWeightInput(weightId, checkId) {
+  const cb = document.getElementById(checkId);
+  const inp = document.getElementById(weightId);
+  if (!cb || !inp) return;
+  inp.disabled = cb.checked;
+  if (cb.checked) inp.value = '';
+}
+
+function today() { return new Date().toISOString().split('T')[0]; }
+function formatDate(d) {
+  const dt = new Date(d);
+  return `${dt.getFullYear()}/${String(dt.getMonth()+1).padStart(2,'0')}/${String(dt.getDate()).padStart(2,'0')}`;
+}
+function getPlayer(id) { return state.players.find(p => p.id === id); }
+function playerName(id) { const p = getPlayer(id); return p ? p.name : '不明'; }
+function getPositionColor(pos) {
+  const map = { QB:'badge-blue', RB:'badge-green', WR:'badge-yellow', OL:'badge-orange', DL:'badge-red', LB:'badge-purple', DB:'badge-blue', TE:'badge-green', K:'badge-gray' };
+  return map[pos] || 'badge-gray';
+}
+function avatarColor(i) {
+  const colors = ['#4f9cf9','#22d3a5','#a78bfa','#fb923c','#f87171','#fbbf24'];
+  return colors[i % colors.length];
+}
+function initials(name) { const parts = name.split(' '); return parts.map(p => p[0]).join('').slice(0,2); }
+
+function showToast(msg, icon = '✅') {
+  const t = document.getElementById('toast');
+  document.getElementById('toast-msg').textContent = msg;
+  document.getElementById('toast-icon').textContent = icon;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+function setContent(html) { document.getElementById('content').innerHTML = html; }
+function setTopbarActions(html) { document.getElementById('topbar-actions').innerHTML = html; }
+
+// ========== MODAL ==========
+function openModal(title, body, footer) {
+  document.getElementById('modal-title-text').textContent = title;
+  document.getElementById('modal-body').innerHTML = body;
+  document.getElementById('modal-footer').innerHTML = footer;
+  document.getElementById('modal-overlay').classList.add('open');
+}
+function closeModal() { document.getElementById('modal-overlay').classList.remove('open'); }
+
+// ========== DASHBOARD ==========
+function dashboard() {
+  setTopbarActions('');
+  const today_str = today();
+  const attToday = state.attendance.filter(a => a.date === today_str);
+  const presentToday = attToday.filter(a => a.status === '出席').length;
+  const totalP = state.players.length;
+  const trainCount = state.training.filter(t => t.date === today_str).length;
+
+  const last7dates = [];
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(); d.setDate(d.getDate() - i);
+    last7dates.push(d.toISOString().split('T')[0]);
+  }
+
+  // Training ranking (last 7 days)
+  const weekTraining = state.training.filter(t => last7dates.includes(t.date));
+  const trainCountMap = {};
+  weekTraining.forEach(t => { trainCountMap[t.playerId] = (trainCountMap[t.playerId] || 0) + 1; });
+  const trainRanking = Object.entries(trainCountMap).sort((a, b) => b[1] - a[1]).slice(0, 5);
+
+  // Attendance alert (2+ absences in last 5)
+  const alertPlayers = state.players.filter(p => {
+    const att = state.attendance.filter(a => a.playerId === p.id).sort((a,b) => b.date.localeCompare(a.date));
+    if (att.length < 3) return false;
+    return att.slice(0, 5).filter(a => a.status === '欠席').length >= 2;
+  });
+
+  const medal = ['🥇','🥈','🥉','4','5'];
+
+  setContent(`
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="stat-label">本日出席</div>
+        <div class="stat-val" style="color:var(--green)">${presentToday}<span style="font-size:14px;color:var(--text3)">/${totalP}</span></div>
+        <div class="stat-sub">出席率 ${totalP ? Math.round(presentToday/totalP*100) : 0}%</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">登録選手数</div>
+        <div class="stat-val">${totalP}</div>
+        <div class="stat-sub">アクティブ</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">本日筋トレ</div>
+        <div class="stat-val" style="color:var(--accent)">${trainCount}</div>
+        <div class="stat-sub">セッション</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">今週の筋トレ</div>
+        <div class="stat-val" style="color:var(--purple)">${weekTraining.length}</div>
+        <div class="stat-sub">セッション（7日間）</div>
+      </div>
+    </div>
+
+    <div class="card" style="max-width:480px">
+      <div class="card-title">🏋️ 今週の筋トレ回数ランキング</div>
+      ${trainRanking.length === 0
+        ? '<div class="empty"><div class="empty-icon">🏋️</div><div class="empty-text">今週の記録がありません</div></div>'
+        : trainRanking.map(([pid, cnt], i) => {
+            const p = getPlayer(pid);
+            if (!p) return '';
+            const barW = Math.round((cnt / trainRanking[0][1]) * 100);
+            return `<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border)">
+              <span style="font-size:16px;width:22px;text-align:center">${medal[i]}</span>
+              <div class="player-avatar" style="background:${avatarColor(parseInt(p.id.slice(1)))}; width:26px;height:26px;font-size:10px">${initials(p.name)}</div>
+              <div style="flex:1;min-width:0">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px">
+                  <span style="font-size:13px;font-weight:500">${p.name}</span>
+                  <span style="font-size:13px;font-weight:700;color:var(--accent);font-family:'DM Mono',monospace">${cnt}回</span>
+                </div>
+                <div class="progress"><div class="progress-fill" style="width:${barW}%;background:var(--accent)"></div></div>
+              </div>
+            </div>`;
+          }).join('')
+      }
+    </div>
+
+    <div class="card" style="max-width:480px">
+      <div class="card-title">⚠️ 欠席多い選手 ${alertPlayers.length > 0 ? `<span class="badge badge-red">${alertPlayers.length}名</span>` : '<span class="badge badge-green">問題なし</span>'}</div>
+      ${alertPlayers.length === 0
+        ? '<div style="color:var(--text3);font-size:13px">直近5回で欠席2回以上の選手はいません</div>'
+        : alertPlayers.slice(0,5).map(p => `<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--border)">
+            <div class="player-avatar" style="background:${avatarColor(parseInt(p.id.slice(1)))}">${initials(p.name)}</div>
+            <div><div style="font-size:13px">${p.name}</div><div style="font-size:11px;color:var(--text3)">${(Array.isArray(p.position)?p.position:[p.position]).join("/")} / ${p.grade}年</div></div>
+            <span class="badge badge-red" style="margin-left:auto">要確認</span>
+          </div>`).join('')
+      }
+    </div>
+  `);
+}
+
+// ========== PLAYERS ==========
+let playerSearch = '';
+function players() {
+  setTopbarActions(`<input class="search-input" id="player-search" placeholder="選手を検索..." value="${playerSearch}" oninput="playerSearch=this.value;renderPlayerList()" /><button class="btn btn-primary btn-sm" onclick="openAddPlayer()">＋ 選手追加</button>`);
+  renderPlayerList();
+}
+
+function renderPlayerList() {
+  const q = playerSearch.toLowerCase();
+  const filtered = state.players.filter(p =>
+    p.name.toLowerCase().includes(q) || (Array.isArray(p.position)?p.position:[p.position]).some(pos=>pos.toLowerCase().includes(q)) || p.number.includes(q)
+  );
+  setContent(`
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th><th>選手名</th><th>ポジション</th><th>学年</th><th>身長</th><th>直近出席率</th><th>直近体重</th><th>操作</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${filtered.length === 0 ? `<tr><td colspan="8"><div class="empty"><div class="empty-text">選手が見つかりません</div></div></td></tr>` :
+            filtered.map(p => {
+              const att = state.attendance.filter(a => a.playerId === p.id);
+              const rate = att.length ? Math.round(att.filter(a=>a.status==='出席').length/att.length*100) : null;
+              const wt = state.weight.filter(w => w.playerId === p.id).sort((a,b) => b.date.localeCompare(a.date))[0];
+              const colorIdx = parseInt(p.id.slice(1));
+              return `<tr>
+                <td><span class="td-mono" style="color:var(--text3)">${p.number}</span></td>
+                <td>
+                  <div style="display:flex;align-items:center;gap:8px">
+                    <div class="player-avatar" style="background:${avatarColor(colorIdx)}">${initials(p.name)}</div>
+                    <span style="font-weight:500">${p.name}</span>
+                  </div>
+                </td>
+                <td>${(Array.isArray(p.position)?p.position:[p.position]).map(pos=>`<span class="badge ${getPositionColor(pos)}">${pos}</span>`).join(" ")}</td>
+                <td>${p.grade}年</td>
+                <td class="td-mono">${p.height ? p.height+'cm' : '—'}</td>
+                <td>${rate === null ? '<span class="badge badge-gray">未記録</span>' : `<span class="badge ${rate>=80?'badge-green':rate>=60?'badge-yellow':'badge-red'}">${rate}%</span>`}</td>
+                <td class="td-mono">${wt ? wt.weight + ' kg' : '—'}</td>
+                <td>
+                  <div style="display:flex;gap:4px">
+                    <button class="btn btn-ghost btn-xs" onclick="showPlayerDetail('${p.id}')">詳細</button>
+                    <button class="btn btn-ghost btn-xs" onclick="editPlayer('${p.id}')">編集</button>
+                    <button class="btn btn-danger btn-xs" onclick="deletePlayer('${p.id}')">削除</button>
+                  </div>
+                </td>
+              </tr>`;
+            }).join('')
+          }
+        </tbody>
+      </table>
+    </div>
+  `);
+}
+
+function openAddPlayer() {
+  openModal('選手追加', `
+    <div class="form-row form-row-2">
+      <div class="form-group"><label class="form-label">選手名 *</label><input class="form-input" id="f-name" placeholder="例: 田中 翔太" /></div>
+      <div class="form-group"><label class="form-label">背番号</label><input class="form-input" id="f-number" placeholder="例: 07" /></div>
+    </div>
+    <div class="form-row form-row-2">
+      <div class="form-group"><label class="form-label">身長 (cm)</label><input class="form-input" type="number" id="f-height" placeholder="175" min="100" max="250" step="0.1" /></div>
+      <div class="form-group"></div>
+    </div>
+    <div class="form-row form-row-2">
+      <div class="form-group"><label class="form-label">ポジション</label>
+        <div style="display:flex;flex-wrap:wrap;gap:2px;padding:8px;background:var(--surface2);border:1px solid var(--border2);border-radius:var(--radius)"><label style="display:inline-flex;align-items:center;gap:4px;margin-right:8px;margin-bottom:4px;font-size:13px;cursor:pointer"><input type="checkbox" class="pos-check" value="QB"> QB</label><label style="display:inline-flex;align-items:center;gap:4px;margin-right:8px;margin-bottom:4px;font-size:13px;cursor:pointer"><input type="checkbox" class="pos-check" value="RB"> RB</label><label style="display:inline-flex;align-items:center;gap:4px;margin-right:8px;margin-bottom:4px;font-size:13px;cursor:pointer"><input type="checkbox" class="pos-check" value="WR"> WR</label><label style="display:inline-flex;align-items:center;gap:4px;margin-right:8px;margin-bottom:4px;font-size:13px;cursor:pointer"><input type="checkbox" class="pos-check" value="OL"> OL</label><label style="display:inline-flex;align-items:center;gap:4px;margin-right:8px;margin-bottom:4px;font-size:13px;cursor:pointer"><input type="checkbox" class="pos-check" value="DL"> DL</label><label style="display:inline-flex;align-items:center;gap:4px;margin-right:8px;margin-bottom:4px;font-size:13px;cursor:pointer"><input type="checkbox" class="pos-check" value="LB"> LB</label><label style="display:inline-flex;align-items:center;gap:4px;margin-right:8px;margin-bottom:4px;font-size:13px;cursor:pointer"><input type="checkbox" class="pos-check" value="DB"> DB</label><label style="display:inline-flex;align-items:center;gap:4px;margin-right:8px;margin-bottom:4px;font-size:13px;cursor:pointer"><input type="checkbox" class="pos-check" value="TE"> TE</label><label style="display:inline-flex;align-items:center;gap:4px;margin-right:8px;margin-bottom:4px;font-size:13px;cursor:pointer"><input type="checkbox" class="pos-check" value="K"> K</label></div>
+      </div>
+      <div class="form-group"><label class="form-label">学年</label>
+        <select class="form-select" id="f-grade"><option value="1">1年</option><option value="2">2年</option><option value="3">3年</option><option value="4">4年</option></select>
+      </div>
+    </div>
+  `, `<button class="btn btn-ghost" onclick="closeModal()">キャンセル</button><button class="btn btn-primary" onclick="saveNewPlayer()">追加</button>`);
+}
+
+function saveNewPlayer() {
+  const name = document.getElementById('f-name').value.trim();
+  if (!name) { alert('選手名を入力してください'); return; }
+  const p = {
+    id: 'p' + Date.now(),
+    name,
+    number: document.getElementById('f-number').value || '00',
+    position: [...document.querySelectorAll('.pos-check:checked')].map(c=>c.value),
+    grade: parseInt(document.getElementById('f-grade').value),
+    height: parseFloat(document.getElementById('f-height').value) || null,
+    createdAt: new Date().toISOString(),
+  };
+  state.players.push(p);
+  saveData('players', state.players);
+  closeModal();
+  showToast(`${name} を追加しました`);
+  renderPlayerList();
+}
+
+function editPlayer(id) {
+  const p = getPlayer(id);
+  if (!p) return;
+  openModal('選手編集', `
+    <div class="form-row form-row-2">
+      <div class="form-group"><label class="form-label">選手名 *</label><input class="form-input" id="f-name" value="${p.name}" /></div>
+      <div class="form-group"><label class="form-label">背番号</label><input class="form-input" id="f-number" value="${p.number}" /></div>
+    </div>
+    <div class="form-row form-row-2">
+      <div class="form-group"><label class="form-label">身長 (cm)</label><input class="form-input" type="number" id="f-height" placeholder="175" value="${p.height||''}" min="100" max="250" step="0.1" /></div>
+      <div class="form-group"></div>
+    </div>
+    <div class="form-row form-row-2">
+      <div class="form-group"><label class="form-label">ポジション</label>
+        <div style="display:flex;flex-wrap:wrap;gap:2px;padding:8px;background:var(--surface2);border:1px solid var(--border2);border-radius:var(--radius)"><label style=\"display:inline-flex;align-items:center;gap:4px;margin-right:8px;margin-bottom:4px;font-size:13px;cursor:pointer\"><input type=\"checkbox\" class=\"pos-check\" value=\"QB\" ${(Array.isArray(p.position)?p.position:[p.position]).includes('QB')?'checked':''}> QB</label><label style=\"display:inline-flex;align-items:center;gap:4px;margin-right:8px;margin-bottom:4px;font-size:13px;cursor:pointer\"><input type=\"checkbox\" class=\"pos-check\" value=\"RB\" ${(Array.isArray(p.position)?p.position:[p.position]).includes('RB')?'checked':''}> RB</label><label style=\"display:inline-flex;align-items:center;gap:4px;margin-right:8px;margin-bottom:4px;font-size:13px;cursor:pointer\"><input type=\"checkbox\" class=\"pos-check\" value=\"WR\" ${(Array.isArray(p.position)?p.position:[p.position]).includes('WR')?'checked':''}> WR</label><label style=\"display:inline-flex;align-items:center;gap:4px;margin-right:8px;margin-bottom:4px;font-size:13px;cursor:pointer\"><input type=\"checkbox\" class=\"pos-check\" value=\"OL\" ${(Array.isArray(p.position)?p.position:[p.position]).includes('OL')?'checked':''}> OL</label><label style=\"display:inline-flex;align-items:center;gap:4px;margin-right:8px;margin-bottom:4px;font-size:13px;cursor:pointer\"><input type=\"checkbox\" class=\"pos-check\" value=\"DL\" ${(Array.isArray(p.position)?p.position:[p.position]).includes('DL')?'checked':''}> DL</label><label style=\"display:inline-flex;align-items:center;gap:4px;margin-right:8px;margin-bottom:4px;font-size:13px;cursor:pointer\"><input type=\"checkbox\" class=\"pos-check\" value=\"LB\" ${(Array.isArray(p.position)?p.position:[p.position]).includes('LB')?'checked':''}> LB</label><label style=\"display:inline-flex;align-items:center;gap:4px;margin-right:8px;margin-bottom:4px;font-size:13px;cursor:pointer\"><input type=\"checkbox\" class=\"pos-check\" value=\"DB\" ${(Array.isArray(p.position)?p.position:[p.position]).includes('DB')?'checked':''}> DB</label><label style=\"display:inline-flex;align-items:center;gap:4px;margin-right:8px;margin-bottom:4px;font-size:13px;cursor:pointer\"><input type=\"checkbox\" class=\"pos-check\" value=\"TE\" ${(Array.isArray(p.position)?p.position:[p.position]).includes('TE')?'checked':''}> TE</label><label style=\"display:inline-flex;align-items:center;gap:4px;margin-right:8px;margin-bottom:4px;font-size:13px;cursor:pointer\"><input type=\"checkbox\" class=\"pos-check\" value=\"K\" ${(Array.isArray(p.position)?p.position:[p.position]).includes('K')?'checked':''}> K</label></div>
+      </div>
+      <div class="form-group"><label class="form-label">学年</label>
+        <select class="form-select" id="f-grade">${[1,2,3,4].map(g=>`<option value="${g}" ${g===p.grade?'selected':''}>${g}年</option>`).join('')}</select>
+      </div>
+    </div>
+  `, `<button class="btn btn-ghost" onclick="closeModal()">キャンセル</button><button class="btn btn-primary" onclick="saveEditPlayer('${id}')">保存</button>`);
+}
+
+function saveEditPlayer(id) {
+  const p = getPlayer(id);
+  if (!p) return;
+  p.name = document.getElementById('f-name').value.trim() || p.name;
+  p.number = document.getElementById('f-number').value || p.number;
+  p.position = [...document.querySelectorAll('.pos-check:checked')].map(c=>c.value);
+  p.grade = parseInt(document.getElementById('f-grade').value);
+  p.height = parseFloat(document.getElementById('f-height').value) || null;
+  saveData('players', state.players);
+  closeModal();
+  showToast('選手情報を更新しました');
+  renderPlayerList();
+}
+
+function deletePlayer(id) {
+  const p = getPlayer(id);
+  if (!p || !confirm(`${p.name} を削除しますか？関連する記録はすべて残ります。`)) return;
+  state.players = state.players.filter(x => x.id !== id);
+  saveData('players', state.players);
+  showToast(`${p.name} を削除しました`, '🗑️');
+  renderPlayerList();
+}
+
+// ========== ATTENDANCE ==========
+let attDate = today();
+function attendance() {
+  setTopbarActions(`<input type="date" class="date-input-sm" id="att-date" value="${attDate}" onchange="attDate=this.value;renderAttendance()" /><button class="btn btn-primary btn-sm" onclick="openBulkAttendance()">📋 一括入力</button>`);
+  renderAttendance();
+}
+
+function renderAttendance() {
+  const records = state.attendance.filter(a => a.date === attDate);
+  const statusMap = {};
+  records.forEach(r => { statusMap[r.playerId] = r; });
+
+  const statusBadge = s => {
+    const map = { '出席':'badge-green', '欠席':'badge-red', '遅刻':'badge-yellow', '早退':'badge-orange' };
+    return `<span class="badge ${map[s]||'badge-gray'}">${s}</span>`;
+  };
+
+  // Summary
+  const counts = { '出席': 0, '欠席': 0, '遅刻': 0, '早退': 0, '未記録': 0 };
+  state.players.forEach(p => {
+    const r = statusMap[p.id];
+    counts[r ? r.status : '未記録']++;
+  });
+
+  setContent(`
+    <div style="display:flex;gap:10px;margin-bottom:1.25rem;flex-wrap:wrap">
+      ${Object.entries(counts).map(([s, c]) => `
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:10px 16px;text-align:center">
+          <div style="font-size:20px;font-weight:700;font-family:'DM Mono',monospace">${c}</div>
+          <div style="font-size:11px;color:var(--text3);margin-top:2px">${s}</div>
+        </div>`).join('')}
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>選手名</th><th>ポジション</th><th>学年</th><th>ステータス</th><th>備考</th><th>操作</th></tr></thead>
+        <tbody>
+          ${state.players.map(p => {
+            const r = statusMap[p.id];
+            return `<tr>
+              <td>
+                <div style="display:flex;align-items:center;gap:8px">
+                  <div class="player-avatar" style="background:${avatarColor(parseInt(p.id.slice(1)))}">${initials(p.name)}</div>
+                  ${p.name}
+                </div>
+              </td>
+              <td>${(Array.isArray(p.position)?p.position:[p.position]).map(pos=>`<span class="badge ${getPositionColor(pos)}">${pos}</span>`).join(" ")}</td>
+              <td>${p.grade}年</td>
+              <td>${r ? statusBadge(r.status) : '<span class="badge badge-gray">未記録</span>'}</td>
+              <td style="font-size:12px;color:var(--text3)">${r?.note || '—'}</td>
+              <td><button class="btn btn-ghost btn-xs" onclick="openAttendanceForm('${p.id}')">入力</button></td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table>
+    </div>
+  `);
+}
+
+function openBulkAttendance() {
+  openModal('一括出席入力', `
+    <div style="margin-bottom:1rem;font-size:13px;color:var(--text2)">全選手の出席状況をまとめて設定します（${attDate}）</div>
+    <div style="display:flex;gap:8px;margin-bottom:1rem;flex-wrap:wrap">
+      <button class="btn btn-green btn-sm" onclick="bulkSetStatus('出席')">全員 出席</button>
+      <button class="btn btn-ghost btn-sm" onclick="bulkSetStatus('欠席')">全員 欠席</button>
+    </div>
+    <div style="max-height:360px;overflow-y:auto">
+      ${state.players.map((p, i) => {
+        const existing = state.attendance.find(a => a.date === attDate && a.playerId === p.id);
+        return `<div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--border)">
+          <div class="player-avatar" style="background:${avatarColor(parseInt(p.id.slice(1)))}; width:26px;height:26px;font-size:10px">${initials(p.name)}</div>
+          <span style="min-width:100px;font-size:13px">${p.name}</span>
+          <select class="form-select" id="bulk-${p.id}" style="flex:1;padding:5px 8px;font-size:12px">
+            <option value="">—</option>
+            ${['出席','欠席','遅刻','早退'].map(s=>`<option value="${s}" ${existing?.status===s?'selected':''}>${s}</option>`).join('')}
+          </select>
+        </div>`;
+      }).join('')}
+    </div>
+  `, `<button class="btn btn-ghost" onclick="closeModal()">キャンセル</button><button class="btn btn-primary" onclick="saveBulkAttendance()">保存</button>`);
+}
+
+function bulkSetStatus(status) {
+  state.players.forEach(p => {
+    const sel = document.getElementById('bulk-' + p.id);
+    if (sel) sel.value = status;
+  });
+}
+
+function saveBulkAttendance() {
+  let count = 0;
+  state.players.forEach(p => {
+    const sel = document.getElementById('bulk-' + p.id);
+    if (!sel || !sel.value) return;
+    const idx = state.attendance.findIndex(a => a.date === attDate && a.playerId === p.id);
+    const rec = { id: 'att-' + p.id + '-' + attDate, playerId: p.id, date: attDate, status: sel.value, note: '' };
+    if (idx >= 0) state.attendance[idx] = rec;
+    else state.attendance.push(rec);
+    count++;
+  });
+  saveData('attendance', state.attendance);
+  closeModal();
+  showToast(`${count}件の出席を記録しました`);
+  renderAttendance();
+}
+
+function openAttendanceForm(playerId) {
+  const p = getPlayer(playerId);
+  const existing = state.attendance.find(a => a.date === attDate && a.playerId === playerId);
+  openModal(`出席入力 — ${p.name}`, `
+    <div class="form-group"><label class="form-label">日付</label><input class="form-input" type="date" id="f-att-date" value="${attDate}" /></div>
+    <div class="form-group"><label class="form-label">ステータス</label>
+      <select class="form-select" id="f-att-status">
+        ${['出席','欠席','遅刻','早退'].map(s=>`<option ${existing?.status===s?'selected':''}>${s}</option>`).join('')}
+      </select>
+    </div>
+    <div class="form-group"><label class="form-label">備考</label><input class="form-input" id="f-att-note" placeholder="理由など..." value="${existing?.note||''}" /></div>
+  `, `<button class="btn btn-ghost" onclick="closeModal()">キャンセル</button><button class="btn btn-primary" onclick="saveAttendance('${playerId}')">保存</button>`);
+}
+
+function saveAttendance(playerId) {
+  const date = document.getElementById('f-att-date').value;
+  const status = document.getElementById('f-att-status').value;
+  const note = document.getElementById('f-att-note').value;
+  const idx = state.attendance.findIndex(a => a.date === date && a.playerId === playerId);
+  const rec = { id: 'att-' + playerId + '-' + date, playerId, date, status, note };
+  if (idx >= 0) state.attendance[idx] = rec;
+  else state.attendance.push(rec);
+  saveData('attendance', state.attendance);
+  closeModal();
+  showToast('出席を記録しました');
+  attDate = date;
+  renderAttendance();
+}
+
+// ========== TRAINING ==========
+// state.training: array of SESSION objects
+// session = { id, playerId, date, exercises: [{exercise, weight, reps, sets}], memo, createdAt }
+// For backward compat, old records (no .exercises) are treated as single-exercise sessions on read.
+
+const EXERCISE_CATEGORIES = {
+  '胸': [
+    'ベンチプレス','インクラインベンチプレス','デクラインベンチプレス',
+    'ダンベルベンチプレス','インクラインダンベルベンチプレス',
+    'ダンベルフライ','インクラインダンベルフライ',
+    'ケーブルクロスオーバー','ペックデック','ディップス（胸）',
+  ],
+  '背中': [
+    'デッドリフト','スモウデッドリフト','ルーマニアンデッドリフト',
+    'バーベルロウ','Tバーロウ','ダンベルロウ','ケーブルロウ','シーテッドロウ',
+    'ラットプルダウン','チンアップ','プルアップ','ワンハンドダンベルロウ',
+    'フェイスプル','ストレートアームプルダウン',
+  ],
+  '脚': [
+    'スクワット','フロントスクワット','ゴブレットスクワット','ハックスクワット',
+    'レッグプレス','ブルガリアンスプリットスクワット','ランジ','ウォーキングランジ',
+    'レッグカール','レッグエクステンション','ルーマニアンデッドリフト',
+    'カーフレイズ','シーテッドカーフレイズ','ヒップスラスト','グルートブリッジ',
+  ],
+  '肩': [
+    'オーバーヘッドプレス','ダンベルショルダープレス','アーノルドプレス',
+    'サイドレイズ','フロントレイズ','リアデルトフライ',
+    'フェイスプル','アップライトロウ','ケーブルサイドレイズ',
+    'バーベルショルダープレス（ミリタリープレス）',
+  ],
+  '腕': [
+    'バーベルカール','ダンベルカール','ハンマーカール','インクラインダンベルカール',
+    'ケーブルカール','プリーチャーカール','コンセントレーションカール',
+    'トライセップスプレス','スカルクラッシャー','ケーブルプッシュダウン',
+    'オーバーヘッドトライセップス','ダンベルキックバック','ディップス（腕）',
+    'リストカール','リバースリストカール',
+  ],
+  '体幹': [
+    'クリーン','パワークリーン','ハングクリーン','クリーン&ジャーク',
+    'スナッチ','パワースナッチ',
+    'プランク','サイドプランク','アブローラー','クランチ','レッグレイズ',
+    'ケーブルウッドチョップ','パレオフプレス','ロシアンツイスト',
+    'グッドモーニング','バックエクステンション','ヒップヒンジ',
+  ],
+};
+// Flat list for backward compat
+
+const CATEGORY_COLORS = {
+  '胸':   { bg: 'rgba(248,113,113,0.18)', color: '#f87171', border: 'rgba(248,113,113,0.4)' },
+  '背中': { bg: 'rgba(251,146,60,0.18)',  color: '#fb923c', border: 'rgba(251,146,60,0.4)' },
+  '脚':   { bg: 'rgba(250,204,21,0.18)',  color: '#d4a800', border: 'rgba(250,204,21,0.4)' },
+  '肩':   { bg: 'rgba(74,222,128,0.18)',  color: '#4ade80', border: 'rgba(74,222,128,0.4)' },
+  '腕':   { bg: 'rgba(167,139,250,0.18)', color: '#a78bfa', border: 'rgba(167,139,250,0.4)' },
+  '体幹': { bg: 'rgba(56,189,248,0.18)',  color: '#38bdf8', border: 'rgba(56,189,248,0.4)' },
+};
+function getCategoryForExercise(name) {
+  for (const [cat, exs] of Object.entries(EXERCISE_CATEGORIES)) {
+    if (exs.includes(name)) return cat;
+    const custom = (state.customExercises[cat] || []);
+    if (custom.includes(name)) return cat;
+    // check playerExercises
+    for (const pe of Object.values(state.playerExercises || {})) {
+      if ((pe[cat] || []).includes(name)) return cat;
+    }
+  }
+  return null;
+}
+function exerciseBadge(name, extraStyle) {
+  const cat = getCategoryForExercise(name);
+  const c = cat ? CATEGORY_COLORS[cat] : null;
+  const style = c
+    ? `background:${c.bg};color:${c.color};border:1px solid ${c.border};`
+    : 'background:rgba(79,156,249,0.15);color:#4f9cf9;border:1px solid rgba(79,156,249,0.3);';
+  return `<span style="display:inline-flex;align-items:center;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600;${style}${extraStyle||''}">${name}</span>`;
+}
+const EXERCISES = Object.values(EXERCISE_CATEGORIES).flat();
+
+function getExercisesForCategory(cat, playerId) {
+  if (playerId && state.playerExercises[playerId]) {
+    // Player-specific mode: use player's own list
+    const pe = state.playerExercises[playerId];
+    const deleted = pe['__deleted__'] || [];
+    const globalDeleted = state.customExercises['__deleted__'] || [];
+    const base = (EXERCISE_CATEGORIES[cat] || []).filter(e =>
+      !deleted.includes(cat + ':' + e) && !globalDeleted.includes(cat + ':' + e)
+    );
+    const globalCustom = (state.customExercises[cat] || []).filter(e => !deleted.includes(cat + ':' + e));
+    const playerCustom = (pe[cat] || []);
+    return [...base, ...globalCustom, ...playerCustom];
+  }
+  // Global mode
+  const deleted = state.customExercises['__deleted__'] || [];
+  const base = (EXERCISE_CATEGORIES[cat] || []).filter(e => !deleted.includes(cat + ':' + e));
+  const custom = (state.customExercises[cat] || []);
+  return [...base, ...custom];
+}
+
+function makeExerciseCategorySelect(selectId) {
+  const cats = Object.keys(EXERCISE_CATEGORIES);
+  return '<select class="form-select" id="' + selectId + '" onchange="onExerciseSelectChange(\'' + selectId + '\')">'
+    + cats.map(cat => {
+        const exs = getExercisesForCategory(cat);
+        return '<optgroup label="' + cat + '">'
+          + exs.map(e => '<option value="' + e + '">' + e + '</option>').join('')
+          + '</optgroup>';
+      }).join('')
+    + '</select>';
+}
+
+function onExerciseSelectChange(selectId) {}
+
+function formatExerciseSets(e) {
+  // New format: e.sets = [{weight, reps}, ...]
+  if (e.sets && Array.isArray(e.sets)) {
+    const sets = e.sets;
+    const maxRm = Math.max(...sets.map(s => s.weight === '自重' ? 0 : Math.round((s.weight||0)*(1+(s.reps||0)/30))));
+    return sets.map((s, si) => {
+      const rm = s.weight === '自重' ? null : Math.round((s.weight||0)*(1+(s.reps||0)/30));
+      const isMax = rm && rm === maxRm && sets.length > 1;
+      return `<div style="display:flex;align-items:center;gap:6px;font-size:11px;padding:1px 0">
+        <span style="color:var(--text3);min-width:14px">${si+1}</span>
+        <span class="td-mono">${s.weight === '自重' ? '自重' : (s.weight||0)+'kg'} × ${s.reps||0}回</span>
+        ${rm ? `<span style="color:var(--green);font-family:'DM Mono',monospace;margin-left:auto">(1RM:${rm})</span>` : ''}
+        ${isMax ? '<span style="background:#ef4444;color:white;font-size:9px;padding:1px 4px;border-radius:3px;font-weight:700">MAX RM</span>' : ''}
+      </div>`;
+    }).join('');
+  }
+  // Old format: e.weight, e.reps, e.sets(number)
+  const w = e.weight;
+  const r = e.reps;
+  const s = typeof e.sets === 'number' ? e.sets : 1;
+  const rm = w === '自重' ? null : Math.round((w||0)*(1+(r||0)/30));
+  return `<div style="font-size:11px;padding:1px 0" class="td-mono">${w === '自重' ? '自重' : (w||0)+'kg'} × ${r||0}回 × ${s}セット${rm ? ' (1RM:'+rm+')' : ''}</div>`;
+}
+
+let trainingFilter = { playerId: '', date: '' };
+// Temp exercises being built in the modal
+let _sessionExercises = [];
+
+function training() {
+  setTopbarActions(`<button class="btn btn-primary btn-sm" onclick="openTrainingForm()">＋ セッション記録</button>`);
+  renderTraining();
+}
+
+function getSessionExercises(s) {
+  // Support old single-exercise format
+  if (s.exercises) return s.exercises;
+  return [{ exercise: s.exercise, weight: s.weight, reps: s.reps, sets: s.sets }];
+}
+
+function renderTraining() {
+  let sessions = [...state.training].sort((a,b) => b.date.localeCompare(a.date) || (b.createdAt||'').localeCompare(a.createdAt||''));
+  if (trainingFilter.playerId) sessions = sessions.filter(r => r.playerId === trainingFilter.playerId);
+  if (trainingFilter.date) sessions = sessions.filter(r => r.date === trainingFilter.date);
+
+  setContent(`
+    <div style="display:flex;gap:8px;margin-bottom:1rem;flex-wrap:wrap;align-items:center">
+      <select class="form-select" style="width:160px" onchange="trainingFilter.playerId=this.value;renderTraining()">
+        <option value="">全選手</option>
+        ${state.players.map(p=>`<option value="${p.id}" ${trainingFilter.playerId===p.id?'selected':''}>${p.name}</option>`).join('')}
+      </select>
+      <input type="date" class="date-input-sm" value="${trainingFilter.date}" onchange="trainingFilter.date=this.value;renderTraining()" />
+      ${(trainingFilter.playerId||trainingFilter.date)?`<button class="btn btn-ghost btn-sm" onclick="trainingFilter={playerId:'',date:''};renderTraining()">クリア</button>`:''}
+      <span style="font-size:12px;color:var(--text3);margin-left:auto">${sessions.length}セッション</span>
+    </div>
+    ${sessions.length === 0
+      ? `<div class="empty"><div class="empty-icon">🏋️</div><div class="empty-text">記録がありません</div></div>`
+      : sessions.map(s => {
+          const exs = getSessionExercises(s);
+          return `
+          <div class="card" style="margin-bottom:.75rem">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+              <div style="display:flex;align-items:center;gap:8px">
+                <div class="player-avatar" style="background:${avatarColor(parseInt((s.playerId||'p0').slice(1)))}; width:30px;height:30px;font-size:11px">${initials(playerName(s.playerId))}</div>
+                <div>
+                  <div style="font-size:14px;font-weight:600">${playerName(s.playerId)}</div>
+                  <div style="font-size:11px;color:var(--text3)">${formatDate(s.date)} — ${exs.length}種目</div>
+                </div>
+              </div>
+              <button class="btn btn-danger btn-xs" onclick="deleteRecord('training','${s.id}')">削除</button>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:4px">
+              ${exs.map(e => {
+                const rm = Math.round(e.weight * (1 + e.reps / 30));
+                return `<div style="display:flex;align-items:center;gap:8px;padding:5px 8px;background:var(--surface2);border-radius:var(--radius);font-size:13px">
+                  <span class="badge badge-blue" style="min-width:80px;justify-content:center">${e.exercise}</span>
+                  ${formatExerciseSets(e)}
+                  <span style="margin-left:auto;font-size:11px;color:var(--green);font-family:'DM Mono',monospace">1RM≈${rm}kg</span>
+                </div>`;
+              }).join('')}
+            </div>
+            ${s.memo ? `<div style="font-size:12px;color:var(--text3);margin-top:8px">${s.memo}</div>` : ''}
+          </div>`;
+        }).join('')
+    }
+  `);
+}
+
+function openTrainingForm() {
+  _sessionExercises = [];
+  openModal('筋トレセッション記録', `
+    <div class="form-row form-row-2">
+      <div class="form-group"><label class="form-label">選手 *</label>
+        <select class="form-select" id="f-tr-player" onchange="rebuildTrainingExSelect()">
+          <option value="">選択...</option>
+          ${state.players.map(p=>`<option value="${p.id}">${p.name}</option>`).join('')}
+        </select>
+      </div>
+      <div class="form-group"><label class="form-label">日付</label><input class="form-input" type="date" id="f-tr-date" value="${today()}" /></div>
+    </div>
+
+    <div style="background:var(--surface2);border-radius:var(--radius);padding:1rem;margin-bottom:1rem">
+      <div style="font-size:12px;font-weight:600;color:var(--text2);margin-bottom:10px">種目を追加</div>
+      <div class="form-group" style="margin-bottom:8px">
+        <label class="form-label">種目</label>
+        <div id="f-tr-ex-wrap">${makeExerciseCategorySelect('f-tr-ex', '')}</div>
+      </div>
+      <div style="font-size:12px;font-weight:600;color:var(--text2);margin-bottom:6px">セット</div>
+      <div id="f-tr-sets-list" style="display:flex;flex-direction:column;gap:4px;margin-bottom:8px"></div>
+      <div style="display:flex;gap:6px;align-items:center;margin-bottom:8px">
+        <label style="display:flex;align-items:center;gap:4px;font-size:12px;cursor:pointer;color:var(--text2)">
+          <input type="checkbox" id="f-tr-bw" onchange="toggleWeightInput('f-tr-weight','f-tr-bw')"> 自重
+        </label>
+        <input class="form-input" type="number" id="f-tr-weight" placeholder="重量 kg" min="0" step="0.5" style="flex:1" />
+        <input class="form-input" type="number" id="f-tr-reps" placeholder="回数" min="1" style="flex:1" />
+        <button class="btn btn-ghost btn-sm" onclick="addSetRow()">＋ セット追加</button>
+      </div>
+      <button class="btn btn-ghost" style="width:100%;justify-content:center" onclick="addExerciseToSession()">✔ 種目を確定</button>
+    </div>
+
+    <div id="session-ex-list" style="display:flex;flex-direction:column;gap:6px;margin-bottom:1rem"></div>
+
+    <div class="form-group"><label class="form-label">メモ</label><input class="form-input" id="f-tr-memo" placeholder="今日の感想など..." /></div>
+  `, `<button class="btn btn-ghost" onclick="closeModal()">キャンセル</button><button class="btn btn-primary" onclick="saveTrainingSession()">セッション保存</button>`);
+}
+
+let _currentSets = []; // sets being built for current exercise
+
+function addSetRow() {
+  const isBW = document.getElementById('f-tr-bw') && document.getElementById('f-tr-bw').checked;
+  const weight = isBW ? '自重' : parseFloat(document.getElementById('f-tr-weight').value);
+  const reps = parseInt(document.getElementById('f-tr-reps').value);
+  if (!isBW && !weight) { alert('重量を入力するか自重を選択してください'); return; }
+  if (!reps) { alert('回数を入力してください'); return; }
+  _currentSets.push({ weight, reps });
+  document.getElementById('f-tr-reps').value = '';
+  renderCurrentSets();
+}
+
+function renderCurrentSets() {
+  const el = document.getElementById('f-tr-sets-list');
+  if (!el) return;
+  el.innerHTML = _currentSets.map((s, i) => `
+    <div style="display:flex;align-items:center;gap:6px;padding:4px 8px;background:var(--surface);border-radius:6px;font-size:12px">
+      <span style="color:var(--text3);min-width:20px">${i+1}</span>
+      <span class="td-mono">${s.weight === '自重' ? '自重' : s.weight + 'kg'} × ${s.reps}回</span>
+      <button onclick="_currentSets.splice(${i},1);renderCurrentSets()" style="margin-left:auto;background:none;border:none;color:var(--red);cursor:pointer;font-size:13px">×</button>
+    </div>`).join('');
+}
+
+function addExerciseToSession() {
+  if (_currentSets.length === 0) { alert('セットを1つ以上追加してください'); return; }
+  _sessionExercises.push({
+    exercise: document.getElementById('f-tr-ex').value,
+    sets: [..._currentSets],
+  });
+  _currentSets = [];
+  document.getElementById('f-tr-weight').value = '';
+  document.getElementById('f-tr-reps').value = '';
+  const bwEl = document.getElementById('f-tr-bw'); if (bwEl) { bwEl.checked = false; document.getElementById('f-tr-weight').disabled = false; }
+  renderCurrentSets();
+  renderSessionExList();
+}
+
+function renderSessionExList() {
+  const el = document.getElementById('session-ex-list');
+  if (!el) return;
+  if (_sessionExercises.length === 0) { el.innerHTML = ''; return; }
+  el.innerHTML = _sessionExercises.map((e, i) => {
+    const sets = e.sets || [{ weight: e.weight, reps: e.reps }];
+    const maxRm = Math.max(...sets.map(s => s.weight === '自重' ? 0 : Math.round(s.weight*(1+s.reps/30))));
+    return `
+    <div style="background:var(--surface2);border-radius:var(--radius);padding:8px 10px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px">
+        ${exerciseBadge(e.exercise)}
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="font-size:11px;color:var(--text3)">${sets.length}セット</span>
+          <button onclick="_sessionExercises.splice(${i},1);renderSessionExList()" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:13px">×</button>
+        </div>
+      </div>
+      ${sets.map((s, si) => {
+        const rm = s.weight === '自重' ? null : Math.round(s.weight*(1+s.reps/30));
+        const isMax = rm && rm === maxRm && sets.length > 1;
+        return `<div style="display:flex;align-items:center;gap:6px;font-size:12px;padding:2px 0">
+          <span style="color:var(--text3);min-width:16px">${si+1}</span>
+          <span class="td-mono">${s.weight === '自重' ? '自重' : s.weight+'kg'} × ${s.reps}回</span>
+          ${rm ? `<span style="margin-left:auto;font-size:11px;color:var(--green);font-family:'DM Mono',monospace">(1RM:${rm})</span>` : ''}
+          ${isMax ? '<span style="background:#ef4444;color:white;font-size:9px;padding:1px 5px;border-radius:3px;font-weight:700">MAX RM</span>' : ''}
+        </div>`;
+      }).join('')}
+    </div>`;
+  }).join('');
+}
+
+function saveTrainingSession() {
+  const playerId = document.getElementById('f-tr-player').value;
+  if (!playerId) { alert('選手を選択してください'); return; }
+  if (_sessionExercises.length === 0) { alert('種目を1つ以上追加してください'); return; }
+  const session = {
+    id: 'tr-' + Date.now(),
+    playerId,
+    date: document.getElementById('f-tr-date').value,
+    exercises: [..._sessionExercises],
+    memo: document.getElementById('f-tr-memo').value,
+    createdAt: new Date().toISOString(),
+  };
+  state.training.push(session);
+  saveData('training', state.training);
+  closeModal();
+  showToast(`${_sessionExercises.length}種目のセッションを保存しました`);
+  _sessionExercises = [];
+  renderTraining();
+}
+
+// ========== FIELD TEST ==========
+let ftTab = 'records'; // 'records' | 'ranking'
+let ftRankMode = 'best'; // 'best' | 'recent'
+
+function fieldtest() {
+  setTopbarActions(`<button class="btn btn-primary btn-sm" onclick="openFieldTestForm()">＋ テスト記録</button>`);
+  renderFieldTestPage();
+}
+
+function renderFieldTestPage() {
+  const tabBar = `
+    <div class="tabs" style="margin-bottom:1rem">
+      <button class="tab ${ftTab==='records'?'active':''}" onclick="ftTab='records';renderFieldTestPage()">記録一覧</button>
+      <button class="tab ${ftTab==='ranking'?'active':''}" onclick="ftTab='ranking';renderFieldTestPage()">ランキング</button>
+    </div>`;
+  if (ftTab === 'ranking') {
+    const rankContent = renderFtRanking();
+    setContent(tabBar + rankContent);
+  } else {
+    const listContent = buildFieldTestList();
+    setContent(tabBar + listContent);
+  }
+}
+
+const FIELD_TESTS = ['40ヤード走','3コーン','プロアジ','垂直跳び'];
+const FIELD_TEST_UNITS = { '40ヤード走':'秒', '3コーン':'秒', 'プロアジ':'秒', '垂直跳び':'cm' };
+
+let _ftItems = []; // temp items in modal
+
+function buildFieldTestList() {
+  const sessions = [...state.fieldtest].sort((a,b) => b.date.localeCompare(a.date));
+  if (sessions.length === 0) {
+    setContent(`<div class="empty"><div class="empty-icon">🏃</div><div class="empty-text">記録がありません</div></div>`);
+    return;
+  }
+  setContent(sessions.map(s => {
+    const items = s.items || [{ testName: s.testName, result: s.result, unit: s.unit }];
+    return `
+      <div class="card" style="margin-bottom:.75rem">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+          <div style="display:flex;align-items:center;gap:8px">
+            <div class="player-avatar" style="background:${avatarColor(parseInt((s.playerId||'p0').slice(1)))}; width:28px;height:28px;font-size:10px">${initials(playerName(s.playerId))}</div>
+            <div>
+              <div style="font-size:13px;font-weight:600">${playerName(s.playerId)}</div>
+              <div style="font-size:11px;color:var(--text3)">${formatDate(s.date)} — ${items.length}種目</div>
+            </div>
+          </div>
+          <button class="btn btn-danger btn-xs" onclick="deleteFtSession('${s.id}')">削除</button>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:3px">
+          ${items.map(item => `
+            <div style="display:flex;align-items:center;gap:8px;padding:5px 8px;background:var(--surface2);border-radius:var(--radius);font-size:13px">
+              <span style="display:inline-flex;align-items:center;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600;min-width:120px;justify-content:center;background:rgba(167,139,250,0.18);color:#a78bfa;border:1px solid rgba(167,139,250,0.4)">${item.testName}</span>
+              <span class="td-mono" style="font-size:15px;font-weight:600">${item.result}</span>
+              <span style="font-size:12px;color:var(--text3)">${item.unit}</span>
+            </div>`).join('')}
+        </div>
+        ${s.memo ? `<div style="font-size:11px;color:var(--text3);margin-top:6px">${s.memo}</div>` : ''}
+      </div>`;
+  }).join(''));
+}
+
+function deleteFtSession(id) {
+  if (!confirm('この記録を削除しますか？')) return;
+  state.fieldtest = state.fieldtest.filter(r => r.id !== id);
+  saveData('fieldtest', state.fieldtest);
+  showToast('削除しました', '🗑️');
+  renderFieldTestPage();
+}
+
+function renderFtRanking() {
+  // Collect all test names from sessions
+  const allTests = new Set();
+  state.fieldtest.forEach(s => {
+    const items = s.items || [{ testName: s.testName, result: s.result, unit: s.unit }];
+    items.forEach(it => allTests.add(it.testName));
+  });
+  if (allTests.size === 0) return '<div class="empty"><div class="empty-icon">🏃</div><div class="empty-text">記録がありません</div></div>';
+
+  const medal = ['🥇','🥈','🥉','4','5','6','7','8','9','10'];
+  const modeBtn = (m, label) => `<button class="btn ${ftRankMode===m?'btn-primary':'btn-ghost'} btn-sm" onclick="ftRankMode='${m}';renderFieldTestPage()">${label}</button>`;
+
+  return `
+    <div style="display:flex;gap:6px;margin-bottom:1.25rem">${modeBtn('best','全期間ベスト')}${modeBtn('recent','直近の記録')}</div>
+    ${[...allTests].map(testName => {
+      // Get best or recent per player
+      const playerScores = state.players.map(p => {
+        const recs = [];
+        state.fieldtest.forEach(s => {
+          const items = s.items || [{ testName: s.testName, result: s.result, unit: s.unit, date: s.date }];
+          items.filter(it => it.testName === testName).forEach(it => recs.push({ result: it.result, unit: it.unit, date: s.date }));
+        });
+        if (recs.length === 0) return null;
+        recs.sort((a,b) => b.date.localeCompare(a.date));
+        const unit = recs[0].unit;
+        // Lower = better for time (秒), higher = better for distance (cm/m)
+        const isTime = unit === '秒';
+        const score = ftRankMode === 'recent'
+          ? recs[0].result
+          : (isTime ? Math.min(...recs.map(r=>r.result)) : Math.max(...recs.map(r=>r.result)));
+        return { player: p, score, unit, date: recs[0].date };
+      }).filter(Boolean);
+
+      if (playerScores.length === 0) return '';
+      const unit = playerScores[0].unit;
+      const isTime = unit === '秒';
+      playerScores.sort((a,b) => isTime ? a.score - b.score : b.score - a.score);
+      const best = playerScores[0].score;
+
+      return `
+        <div class="card" style="margin-bottom:1rem">
+          <div class="card-title" style="margin-bottom:10px">${testName} <span style="font-size:12px;color:var(--text3);font-weight:400">${isTime?'タイム（低い順）':'距離（高い順）'}</span></div>
+          ${playerScores.slice(0,10).map((item,i) => {
+            const barW = isTime
+              ? Math.round((best / item.score) * 100)
+              : Math.round((item.score / best) * 100);
+            return `<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--border)">
+              <span style="font-size:15px;width:22px;text-align:center">${medal[i]||i+1}</span>
+              <div class="player-avatar" style="background:${avatarColor(parseInt((item.player.id||'p0').slice(1)))}; width:26px;height:26px;font-size:10px">${initials(item.player.name)}</div>
+              <div style="flex:1;min-width:0">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px">
+                  <span style="font-size:13px;font-weight:500">${item.player.name}</span>
+                  <span style="font-size:13px;font-weight:700;font-family:'DM Mono',monospace;color:var(--accent)">${item.score} ${item.unit}</span>
+                </div>
+                <div class="progress"><div class="progress-fill" style="width:${barW}%;background:var(--accent)"></div></div>
+              </div>
+            </div>`;
+          }).join('')}
+        </div>`;
+    }).join('')}`;
+}
+
+function openFieldTestForm() {
+  _ftItems = [];
+  openModal('フィールドテスト記録', `
+    <div class="form-row form-row-2">
+      <div class="form-group"><label class="form-label">選手 *</label>
+        <select class="form-select" id="f-ft-player">
+          <option value="">選択...</option>
+          ${state.players.map(p=>`<option value="${p.id}">${p.name}</option>`).join('')}
+        </select>
+      </div>
+      <div class="form-group"><label class="form-label">日付</label>
+        <input class="form-input" type="date" id="f-ft-date" value="${today()}" />
+      </div>
+    </div>
+
+    <div style="background:var(--surface2);border-radius:var(--radius);padding:1rem;margin-bottom:1rem">
+      <div style="font-size:12px;font-weight:600;color:var(--text2);margin-bottom:10px">種目を追加</div>
+      <div class="form-group" style="margin-bottom:8px"><label class="form-label">種目</label>
+        <select class="form-select" id="f-ft-test" onchange="autoFillUnit()">
+          ${FIELD_TESTS.map(t=>`<option>${t}</option>`).join('')}
+          ${(state.customFieldTests||[]).map(t=>`<option>${t}</option>`).join('')}
+          <option value="__ft_custom__">＋ その他（自由入力）</option>
+        </select>
+        <div id="f-ft-custom-wrap" style="display:none;margin-top:6px;gap:6px">
+          <input class="form-input" id="f-ft-custom-name" placeholder="種目名を入力..." style="margin-bottom:4px" />
+          <button class="btn btn-ghost btn-sm" style="width:100%" onclick="addCustomFieldTest()">この種目名で保存して追加</button>
+        </div>
+      </div>
+      <div class="form-row form-row-2" style="margin-bottom:10px">
+        <div class="form-group" style="margin:0"><label class="form-label">結果</label>
+          <input class="form-input" type="number" id="f-ft-result" placeholder="4.52" step="0.01" />
+        </div>
+        <div class="form-group" style="margin:0"><label class="form-label">単位</label>
+          <select class="form-select" id="f-ft-unit">
+            <option>秒</option><option>cm</option><option>m</option><option>回</option><option>その他</option>
+          </select>
+        </div>
+      </div>
+      <button class="btn btn-ghost" style="width:100%;justify-content:center" onclick="addFtItem()">＋ 種目を追加</button>
+    </div>
+
+    <div id="ft-item-list" style="display:flex;flex-direction:column;gap:4px;margin-bottom:1rem"></div>
+    <div class="form-group"><label class="form-label">メモ</label>
+      <input class="form-input" id="f-ft-memo" placeholder="コンディション、備考..." />
+    </div>
+  `, `<button class="btn btn-ghost" onclick="closeModal()">キャンセル</button><button class="btn btn-primary" onclick="saveFtSession()">保存</button>`);
+}
+
+function autoFillUnit() {
+  const test = document.getElementById('f-ft-test').value;
+  const wrap = document.getElementById('f-ft-custom-wrap');
+  if (wrap) wrap.style.display = test === '__ft_custom__' ? 'block' : 'none';
+  const unit = FIELD_TEST_UNITS[test];
+  if (unit) {
+    const sel = document.getElementById('f-ft-unit');
+    for (let i = 0; i < sel.options.length; i++) {
+      if (sel.options[i].value === unit) { sel.selectedIndex = i; break; }
+    }
+  }
+}
+
+function addCustomFieldTest() {
+  const inp = document.getElementById('f-ft-custom-name');
+  const name = inp ? inp.value.trim() : '';
+  if (!name) { alert('種目名を入力してください'); return; }
+  if (!state.customFieldTests.includes(name)) {
+    state.customFieldTests.push(name);
+    saveData('customFieldTests', state.customFieldTests);
+  }
+  // Update select
+  const sel = document.getElementById('f-ft-test');
+  // insert before __ft_custom__ option
+  const customOpt = document.createElement('option');
+  customOpt.value = name; customOpt.textContent = name;
+  sel.insertBefore(customOpt, sel.querySelector('[value="__ft_custom__"]'));
+  sel.value = name;
+  if (inp) inp.value = '';
+  document.getElementById('f-ft-custom-wrap').style.display = 'none';
+  showToast(`「${name}」を追加しました`);
+}
+
+function addFtItem() {
+  const result = parseFloat(document.getElementById('f-ft-result').value);
+  if (!result) { alert('結果を入力してください'); return; }
+  let testName = document.getElementById('f-ft-test').value;
+  if (testName === '__ft_custom__') {
+    const custom = document.getElementById('f-ft-custom-name');
+    testName = custom ? custom.value.trim() : '';
+    if (!testName) { alert('種目名を入力してください'); return; }
+  }
+  _ftItems.push({
+    testName,
+    result,
+    unit: document.getElementById('f-ft-unit').value,
+  });
+  document.getElementById('f-ft-result').value = '';
+  renderFtItemList();
+}
+
+function renderFtItemList() {
+  const el = document.getElementById('ft-item-list');
+  if (!el) return;
+  el.innerHTML = _ftItems.map((item, i) => `
+    <div style="display:flex;align-items:center;gap:8px;padding:5px 10px;background:var(--surface2);border-radius:var(--radius);font-size:13px">
+      <span class="badge badge-purple">${item.testName}</span>
+      <span class="td-mono">${item.result} ${item.unit}</span>
+      <button onclick="_ftItems.splice(${i},1);renderFtItemList()" style="margin-left:auto;background:none;border:none;color:var(--red);cursor:pointer;font-size:14px">×</button>
+    </div>`).join('');
+}
+
+function saveFtSession() {
+  const playerId = document.getElementById('f-ft-player').value;
+  if (!playerId) { alert('選手を選択してください'); return; }
+  if (_ftItems.length === 0) { alert('種目を1つ以上追加してください'); return; }
+  const session = {
+    id: 'ft-' + Date.now(),
+    playerId,
+    date: document.getElementById('f-ft-date').value,
+    items: [..._ftItems],
+    memo: document.getElementById('f-ft-memo').value,
+    createdAt: new Date().toISOString(),
+  };
+  state.fieldtest.push(session);
+  saveData('fieldtest', state.fieldtest);
+  closeModal();
+  showToast(`${_ftItems.length}種目のテスト結果を保存しました`);
+  _ftItems = [];
+  renderFieldTestPage();
+}
+
+// ========== MAX TEST ==========
+let mxTab = 'records';
+let mxRankMode = 'best';
+
+function maxtest() {
+  setTopbarActions(`<button class="btn btn-primary btn-sm" onclick="openMaxTestForm()">＋ MAX測定記録</button>`);
+  renderMaxTestPage();
+}
+
+function renderMaxTestPage() {
+  const tabBar = `
+    <div class="tabs" style="margin-bottom:1rem">
+      <button class="tab ${mxTab==='records'?'active':''}" onclick="mxTab='records';renderMaxTestPage()">記録一覧</button>
+      <button class="tab ${mxTab==='ranking'?'active':''}" onclick="mxTab='ranking';renderMaxTestPage()">ランキング</button>
+    </div>`;
+  setContent(tabBar + (mxTab === 'ranking' ? renderMxRanking() : buildMaxTestList()));
+}
+
+function buildMaxTestList() {
+  const records = [...state.maxtest].sort((a,b) => b.date.localeCompare(a.date));
+  return `
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>日付</th><th>選手名</th><th>種目</th><th>1RM (kg)</th><th>前回比</th><th>メモ</th><th>操作</th></tr></thead>
+        <tbody>
+          ${records.length === 0 ? `<tr><td colspan="7"><div class="empty"><div class="empty-icon">📈</div><div class="empty-text">記録がありません</div></div></td></tr>` :
+            records.map(r => {
+              const prev = state.maxtest.filter(x => x.playerId === r.playerId && x.exercise === r.exercise && x.date < r.date).sort((a,b)=>b.date.localeCompare(a.date))[0];
+              const diff = prev ? (r.rm - prev.rm) : null;
+              return `<tr>
+                <td class="td-mono" style="font-size:12px">${formatDate(r.date)}</td>
+                <td>${playerName(r.playerId)}</td>
+                <td>${exerciseBadge(r.exercise)}</td>
+                <td class="td-mono" style="font-size:16px;font-weight:700;color:var(--green)">${r.rm} <span style="font-size:12px;color:var(--text3)">${r.exercise==='懸垂'?'回':'kg'}</span></td>
+                <td>${diff === null ? '<span class="badge badge-gray">初回</span>' : `<span class="${diff>=0?'trend-up':'trend-down'}">${diff>=0?'+':''}${diff}kg</span>`}</td>
+                <td style="font-size:12px;color:var(--text3)">${r.memo||'—'}</td>
+                <td><button class="btn btn-danger btn-xs" onclick="deleteRecord('maxtest','${r.id}')">削除</button></td>
+              </tr>`;
+            }).join('')}
+        </tbody>
+      </table>
+    </div>`;
+}
+
+function renderMxRanking() {
+  const allExercises = [...new Set(state.maxtest.map(r => r.exercise))];
+  if (allExercises.length === 0) return '<div class="empty"><div class="empty-icon">📈</div><div class="empty-text">記録がありません</div></div>';
+
+  const medal = ['🥇','🥈','🥉','4','5','6','7','8','9','10'];
+  const modeBtn = (m, label) => `<button class="btn ${mxRankMode===m?'btn-primary':'btn-ghost'} btn-sm" onclick="mxRankMode='${m}';renderMaxTestPage()">${label}</button>`;
+
+  return `
+    <div style="display:flex;gap:6px;margin-bottom:1.25rem">${modeBtn('best','全期間ベスト')}${modeBtn('recent','直近の記録')}</div>
+    ${allExercises.map(exercise => {
+      const playerScores = state.players.map(p => {
+        const recs = state.maxtest.filter(r => r.playerId === p.id && r.exercise === exercise).sort((a,b)=>b.date.localeCompare(a.date));
+        if (recs.length === 0) return null;
+        const score = mxRankMode === 'recent' ? recs[0].rm : Math.max(...recs.map(r=>r.rm));
+        return { player: p, score, date: recs[0].date };
+      }).filter(Boolean).sort((a,b) => b.score - a.score);
+
+      if (playerScores.length === 0) return '';
+      const best = playerScores[0].score;
+
+      return `
+        <div class="card" style="margin-bottom:1rem">
+          <div class="card-title" style="margin-bottom:10px">${exerciseBadge(exercise)} <span style="font-size:12px;color:var(--text3);font-weight:400">1RM（重い順）</span></div>
+          ${playerScores.slice(0,10).map((item,i) => {
+            const barW = Math.round((item.score / best) * 100);
+            return `<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--border)">
+              <span style="font-size:15px;width:22px;text-align:center">${medal[i]||i+1}</span>
+              <div class="player-avatar" style="background:${avatarColor(parseInt((item.player.id||'p0').slice(1)))}; width:26px;height:26px;font-size:10px">${initials(item.player.name)}</div>
+              <div style="flex:1;min-width:0">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px">
+                  <span style="font-size:13px;font-weight:500">${item.player.name}</span>
+                  <span style="font-size:13px;font-weight:700;font-family:'DM Mono',monospace;color:var(--green)">${item.score} ${exercise==='懸垂'?'回':'kg'}</span>
+                </div>
+                <div class="progress"><div class="progress-fill" style="width:${barW}%;background:var(--green)"></div></div>
+              </div>
+            </div>`;
+          }).join('')}
+        </div>`;
+    }).join('')}`;
+}
+
+function openMaxTestForm() {
+  openModal('MAX測定記録', `
+    <div class="form-row form-row-2">
+      <div class="form-group"><label class="form-label">選手 *</label>
+        <select class="form-select" id="f-mx-player">
+          <option value="">選択...</option>
+          ${state.players.map(p=>`<option value="${p.id}">${p.name}</option>`).join('')}
+        </select>
+      </div>
+      <div class="form-group"><label class="form-label">日付</label><input class="form-input" type="date" id="f-mx-date" value="${today()}" /></div>
+    </div>
+    <div class="form-row form-row-2">
+      <div class="form-group"><label class="form-label">種目</label>
+        <select class="form-select" id="f-mx-ex" onchange="updateMxUnit()">
+          <option value="ベンチプレス">ベンチプレス</option>
+          <option value="スクワット">スクワット</option>
+          <option value="クリーン">クリーン</option>
+          <option value="懸垂">懸垂</option>
+          <option value="握力（右）">握力（右）</option>
+          <option value="握力（左）">握力（左）</option>
+        </select>
+      </div>
+      <div class="form-group"><label class="form-label" id="f-mx-rm-label">記録 *</label>
+        <div style="display:flex;gap:6px;align-items:center">
+          <input class="form-input" type="number" id="f-mx-rm" placeholder="100" min="0" step="0.5" style="flex:1" />
+          <span id="f-mx-unit" style="font-size:13px;color:var(--text2);white-space:nowrap">kg</span>
+        </div>
+      </div>
+    </div>
+    <div class="form-group"><label class="form-label">メモ</label><input class="form-input" id="f-mx-memo" placeholder="コンディションなど..." /></div>
+  `, `<button class="btn btn-ghost" onclick="closeModal()">キャンセル</button><button class="btn btn-primary" onclick="saveMaxTest()">保存</button>`);
+}
+
+function updateMxUnit() {
+  const ex = document.getElementById('f-mx-ex');
+  const unit = document.getElementById('f-mx-unit');
+  const label = document.getElementById('f-mx-rm-label');
+  if (!ex || !unit) return;
+  if (ex.value === '懸垂') {
+    unit.textContent = '回';
+    if (label) label.textContent = '回数 *';
+    document.getElementById('f-mx-rm').placeholder = '10';
+  } else if (ex.value.startsWith('握力')) {
+    unit.textContent = 'kg';
+    if (label) label.textContent = '握力 (kg) *';
+    document.getElementById('f-mx-rm').placeholder = '45';
+  } else {
+    unit.textContent = 'kg';
+    if (label) label.textContent = '1RM (kg) *';
+    document.getElementById('f-mx-rm').placeholder = '100';
+  }
+}
+
+function saveMaxTest() {
+  const playerId = document.getElementById('f-mx-player').value;
+  const rm = parseFloat(document.getElementById('f-mx-rm').value);
+  if (!playerId || !rm) { alert('選手と1RMを入力してください'); return; }
+  const rec = {
+    id: 'mx-' + Date.now(),
+    playerId,
+    date: document.getElementById('f-mx-date').value,
+    exercise: document.getElementById('f-mx-ex').value,
+    rm,
+    memo: document.getElementById('f-mx-memo').value,
+    createdAt: new Date().toISOString(),
+  };
+  state.maxtest.push(rec);
+  saveData('maxtest', state.maxtest);
+  closeModal();
+  showToast('MAX測定を記録しました');
+  renderMaxTestPage();
+}
+
+// ========== WEIGHT ==========
+function weight() {
+  setTopbarActions(`<button class="btn btn-primary btn-sm" onclick="openWeightForm()">＋ 体重記録</button><button class="btn btn-ghost btn-sm" onclick="openBulkWeight()">一括入力</button>`);
+  renderWeight();
+}
+
+function renderWeight() {
+  const records = [...state.weight].sort((a,b) => b.date.localeCompare(a.date) || b.createdAt?.localeCompare(a.createdAt||'')||0);
+  setContent(`
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>日付</th><th>選手名</th><th>体重 (kg)</th><th>前回比</th><th>BMI参考</th><th>メモ</th><th>操作</th></tr></thead>
+        <tbody>
+          ${records.length === 0 ? `<tr><td colspan="7"><div class="empty"><div class="empty-icon">⚖️</div><div class="empty-text">記録がありません</div></div></td></tr>` :
+            records.map(r => {
+              const prev = state.weight.filter(x => x.playerId === r.playerId && x.date < r.date).sort((a,b)=>b.date.localeCompare(a.date))[0];
+              const diff = prev ? (r.weight - prev.weight).toFixed(1) : null;
+              return `<tr>
+                <td class="td-mono" style="font-size:12px">${formatDate(r.date)}</td>
+                <td>${playerName(r.playerId)}</td>
+                <td class="td-mono" style="font-size:15px;font-weight:600">${r.weight}</td>
+                <td>${diff === null ? '<span class="badge badge-gray">初回</span>' : `<span class="${parseFloat(diff)>=0?'trend-up':'trend-down'}">${parseFloat(diff)>=0?'+':''}${diff}kg</span>`}</td>
+                <td style="font-size:12px;color:var(--text3)">—</td>
+                <td style="font-size:12px;color:var(--text3)">${r.memo||'—'}</td>
+                <td><button class="btn btn-danger btn-xs" onclick="deleteRecord('weight','${r.id}')">削除</button></td>
+              </tr>`;
+            }).join('')
+          }
+        </tbody>
+      </table>
+    </div>
+  `);
+}
+
+function openWeightForm() {
+  openModal('体重記録', `
+    <div class="form-row form-row-2">
+      <div class="form-group"><label class="form-label">選手 *</label>
+        <select class="form-select" id="f-wt-player">
+          <option value="">選択...</option>
+          ${state.players.map(p=>`<option value="${p.id}">${p.name}</option>`).join('')}
+        </select>
+      </div>
+      <div class="form-group"><label class="form-label">日付</label><input class="form-input" type="date" id="f-wt-date" value="${today()}" /></div>
+    </div>
+    <div class="form-group"><label class="form-label">体重 (kg) *</label><input class="form-input" type="number" id="f-wt-val" placeholder="85.5" step="0.1" /></div>
+    <div class="form-group"><label class="form-label">メモ</label><input class="form-input" id="f-wt-memo" placeholder="コンディションなど..." /></div>
+  `, `<button class="btn btn-ghost" onclick="closeModal()">キャンセル</button><button class="btn btn-primary" onclick="saveWeight()">保存</button>`);
+}
+
+function openBulkWeight() {
+  openModal('体重一括入力', `
+    <div style="font-size:13px;color:var(--text2);margin-bottom:1rem">日付: <input type="date" class="date-input-sm" id="f-bwt-date" value="${today()}" /></div>
+    <div style="max-height:400px;overflow-y:auto">
+      ${state.players.map(p => {
+        const last = state.weight.filter(w=>w.playerId===p.id).sort((a,b)=>b.date.localeCompare(a.date))[0];
+        return `<div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--border)">
+          <div class="player-avatar" style="background:${avatarColor(parseInt(p.id.slice(1)))};width:26px;height:26px;font-size:10px">${initials(p.name)}</div>
+          <span style="min-width:90px;font-size:13px">${p.name}</span>
+          <span style="font-size:11px;color:var(--text3);min-width:50px">${last?last.weight+'kg':'—'}</span>
+          <input class="form-input" type="number" id="bwt-${p.id}" placeholder="kg" step="0.1" style="width:80px;padding:5px 8px;font-size:13px" />
+        </div>`;
+      }).join('')}
+    </div>
+  `, `<button class="btn btn-ghost" onclick="closeModal()">キャンセル</button><button class="btn btn-primary" onclick="saveBulkWeight()">保存</button>`);
+}
+
+function saveBulkWeight() {
+  const date = document.getElementById('f-bwt-date').value;
+  let count = 0;
+  state.players.forEach(p => {
+    const inp = document.getElementById('bwt-' + p.id);
+    if (!inp || !inp.value) return;
+    const w = parseFloat(inp.value);
+    if (isNaN(w)) return;
+    const idx = state.weight.findIndex(x => x.playerId === p.id && x.date === date);
+    const rec = { id: 'wt-' + p.id + '-' + date, playerId: p.id, date, weight: w, memo: '', createdAt: new Date().toISOString() };
+    if (idx >= 0) state.weight[idx] = rec; else state.weight.push(rec);
+    count++;
+  });
+  saveData('weight', state.weight);
+  closeModal();
+  showToast(`${count}件の体重を記録しました`);
+  renderWeight();
+}
+
+function saveWeight() {
+  const playerId = document.getElementById('f-wt-player').value;
+  const w = parseFloat(document.getElementById('f-wt-val').value);
+  if (!playerId || !w) { alert('選手と体重を入力してください'); return; }
+  const date = document.getElementById('f-wt-date').value;
+  const idx = state.weight.findIndex(x => x.playerId === playerId && x.date === date);
+  const rec = { id: 'wt-' + Date.now(), playerId, date, weight: w, memo: document.getElementById('f-wt-memo').value, createdAt: new Date().toISOString() };
+  if (idx >= 0) state.weight[idx] = rec; else state.weight.push(rec);
+  saveData('weight', state.weight);
+  closeModal();
+  showToast('体重を記録しました');
+  renderWeight();
+}
+
+// ========== ANALYTICS ==========
+let analyticsPlayer = null;
+function analytics() {
+  setTopbarActions('');
+  if (!analyticsPlayer) {
+    renderAnalyticsPlayerSelect();
+  } else {
+    renderPlayerDetail(analyticsPlayer);
+  }
+}
+
+function renderAnalyticsPlayerSelect() {
+  setContent(`
+    <p style="color:var(--text2);margin-bottom:1rem;font-size:14px">選手を選んで詳細データを確認します</p>
+    <div class="grid3">
+      ${state.players.map((p, i) => {
+        const att = state.attendance.filter(a => a.playerId === p.id);
+        const rate = att.length ? Math.round(att.filter(a=>a.status==='出席').length/att.length*100) : null;
+        const wt = state.weight.filter(w=>w.playerId===p.id).sort((a,b)=>b.date.localeCompare(a.date))[0];
+        const maxBench = Math.max(0, ...state.maxtest.filter(m=>m.playerId===p.id&&m.exercise==='ベンチプレス').map(m=>m.rm));
+        return `<div class="card" style="cursor:pointer;transition:border 0.15s" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'" onclick="analyticsPlayer='${p.id}';renderPlayerDetail('${p.id}')">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+            <div class="player-avatar" style="background:${avatarColor(parseInt(p.id.slice(1)))};width:40px;height:40px;font-size:14px">${initials(p.name)}</div>
+            <div>
+              <div style="font-weight:600;font-size:14px">${p.name}</div>
+              <div style="font-size:12px;color:var(--text3)">${p.grade}年 / <span class="badge ${getPositionColor(p.position)} " style="font-size:10px;padding:1px 6px">${p.position}</span></div>
+            </div>
+          </div>
+          <div style="display:flex;gap:12px;font-size:12px">
+            <div><div style="color:var(--text3)">出席率</div><div style="font-weight:600;color:${rate===null?'var(--text3)':rate>=80?'var(--green)':rate>=60?'var(--yellow)':'var(--red)'}">${rate===null?'—':rate+'%'}</div></div>
+            <div><div style="color:var(--text3)">体重</div><div style="font-weight:600">${wt?wt.weight+'kg':'—'}</div></div>
+            <div><div style="color:var(--text3)">BPmax</div><div style="font-weight:600;color:var(--green)">${maxBench||'—'}${maxBench?'kg':''}</div></div>
+          </div>
+        </div>`;
+      }).join('')}
+    </div>
+  `);
+}
+
+function renderPlayerDetail(playerId) {
+  const p = getPlayer(playerId);
+  if (!p) return;
+
+  const att = state.attendance.filter(a => a.playerId === playerId).sort((a,b) => b.date.localeCompare(a.date));
+  const attRate = att.length ? Math.round(att.filter(a=>a.status==='出席').length/att.length*100) : null;
+
+  const trainRecs = state.training.filter(t => t.playerId === playerId).sort((a,b) => b.date.localeCompare(a.date));
+  const maxRecs = state.maxtest.filter(m => m.playerId === playerId).sort((a,b) => b.date.localeCompare(a.date));
+  const ftRecs = state.fieldtest.filter(f => f.playerId === playerId).sort((a,b) => b.date.localeCompare(a.date));
+  const wtRecs = state.weight.filter(w => w.playerId === playerId).sort((a,b) => b.date.localeCompare(a.date));
+
+  // Weight trend mini chart
+  const wtLast = wtRecs.slice(0, 10).reverse();
+  const wtMin = Math.min(...wtLast.map(w=>w.weight), 0);
+  const wtMax = Math.max(...wtLast.map(w=>w.weight), 1);
+  const wtBars = wtLast.map(w => {
+    const h = Math.max(4, Math.round(((w.weight - wtMin) / (wtMax - wtMin + 1)) * 52));
+    return `<div class="bar" style="height:${h}px;background:var(--yellow)"></div>`;
+  }).join('');
+
+  // Max strength per exercise
+  const exercises = [...new Set(maxRecs.map(m => m.exercise))];
+  const maxByEx = exercises.map(ex => {
+    const recs = maxRecs.filter(m => m.exercise === ex).sort((a,b) => b.date.localeCompare(a.date));
+    const best = Math.max(...recs.map(r=>r.rm));
+    const latest = recs[0];
+    const prev = recs[1];
+    const diff = (prev && latest) ? (latest.rm - prev.rm) : null;
+    return { ex, best, latest, diff };
+  });
+
+  setContent(`
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:1.5rem">
+      <button class="btn btn-ghost btn-sm" onclick="analyticsPlayer=null;renderAnalyticsPlayerSelect()">← 戻る</button>
+      <div class="player-avatar" style="background:${avatarColor(parseInt(p.id.slice(1)))};width:44px;height:44px;font-size:16px">${initials(p.name)}</div>
+      <div>
+        <div style="font-size:20px;font-weight:700">${p.name}</div>
+        <div style="font-size:13px;color:var(--text3)">${p.grade}年 / ${(Array.isArray(p.position)?p.position:[p.position]).join("/")} / #${p.number}</div>
+      </div>
+    </div>
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="stat-label">出席率</div>
+        <div class="stat-val" style="color:${attRate===null?'var(--text3)':attRate>=80?'var(--green)':attRate>=60?'var(--yellow)':'var(--red)'}">${attRate===null?'—':attRate+'%'}</div>
+        <div class="stat-sub">${att.length}回記録</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">直近体重</div>
+        <div class="stat-val" style="color:var(--yellow)">${wtRecs[0]?.weight||'—'}<span style="font-size:14px"> kg</span></div>
+        <div class="stat-sub">${wtRecs[0]?formatDate(wtRecs[0].date):'未記録'}</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">筋トレ回数</div>
+        <div class="stat-val" style="color:var(--accent)">${trainRecs.length}</div>
+        <div class="stat-sub">セッション累計</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">MAX測定数</div>
+        <div class="stat-val" style="color:var(--green)">${maxRecs.length}</div>
+        <div class="stat-sub">累計</div>
+      </div>
+    </div>
+    <div class="grid2">
+      <div class="card">
+        <div class="card-title">体重推移（直近10回）</div>
+        ${wtLast.length === 0 ? '<div class="empty"><div class="empty-text">体重記録がありません</div></div>' : `
+          <div class="mini-chart">${wtBars}</div>
+          <div style="display:flex;justify-content:space-between;margin-top:4px">
+            <span style="font-size:11px;color:var(--text3)">${wtLast[0]?wtLast[0].weight+'kg':''}</span>
+            <span style="font-size:11px;color:var(--yellow);font-weight:600">${wtRecs[0]?.weight||''}kg</span>
+          </div>`}
+      </div>
+      <div class="card">
+        <div class="card-title">MAX強度記録</div>
+        ${maxByEx.length === 0 ? '<div class="empty"><div class="empty-text">MAX測定記録がありません</div></div>' :
+          maxByEx.map(({ex, best, latest, diff}) => `
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border)">
+              <div>
+                <div style="font-size:13px;font-weight:500">${ex}</div>
+                <div style="font-size:11px;color:var(--text3)">${latest?formatDate(latest.date):''}</div>
+              </div>
+              <div style="text-align:right">
+                <div style="font-size:15px;font-weight:700;font-family:'DM Mono',monospace;color:var(--green)">${latest?.rm}kg</div>
+                ${diff !== null ? `<div class="${diff>=0?'trend-up':'trend-down'}" style="font-size:11px">${diff>=0?'+':''}${diff}kg</div>` : ''}
+              </div>
+            </div>`).join('')
+        }
+      </div>
+    </div>
+    <div class="grid2">
+      <div class="card">
+        <div class="card-title">直近の出席状況</div>
+        ${att.length === 0 ? '<div class="empty"><div class="empty-text">出席記録がありません</div></div>' :
+          att.slice(0, 8).map(a => `
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid var(--border)">
+              <span style="font-size:13px;font-family:'DM Mono',monospace;color:var(--text3)">${formatDate(a.date)}</span>
+              <div style="display:flex;align-items:center;gap:8px">
+                ${a.note?`<span style="font-size:11px;color:var(--text3)">${a.note}</span>`:''}
+                <span class="badge ${a.status==='出席'?'badge-green':a.status==='遅刻'?'badge-yellow':a.status==='早退'?'badge-orange':'badge-red'}">${a.status}</span>
+              </div>
+            </div>`).join('')
+        }
+      </div>
+      <div class="card">
+        <div class="card-title">フィールドテスト記録</div>
+        ${ftRecs.length === 0 ? '<div class="empty"><div class="empty-text">テスト記録がありません</div></div>' :
+          ftRecs.slice(0, 6).map(r => `
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid var(--border)">
+              <div>
+                <div style="font-size:13px">${r.testName}</div>
+                <div style="font-size:11px;color:var(--text3)">${formatDate(r.date)}</div>
+              </div>
+              <span style="font-size:15px;font-weight:700;font-family:'DM Mono',monospace;color:var(--purple)">${r.result} ${r.unit}</span>
+            </div>`).join('')
+        }
+      </div>
+    </div>
+    ${trainRecs.length > 0 ? `
+    <div class="card">
+      <div class="card-title">筋トレ記録（直近セッション）</div>
+      ${trainRecs.slice(0, 5).map(s => {
+        const exs = s.exercises ? s.exercises : [{ exercise: s.exercise, weight: s.weight, reps: s.reps, sets: s.sets }];
+        return `<div style="margin-bottom:10px;padding-bottom:10px;border-bottom:1px solid var(--border)">
+          <div style="font-size:12px;color:var(--text3);margin-bottom:5px">${formatDate(s.date)} — ${exs.length}種目</div>
+          ${exs.map(e => {
+            const rm = Math.round(e.weight*(1+e.reps/30));
+            return `<div style="display:flex;align-items:center;gap:8px;padding:4px 8px;background:var(--surface2);border-radius:6px;font-size:12px;margin-bottom:3px">
+              ${exerciseBadge(e.exercise,"font-size:10px;")}
+              ${formatExerciseSets(e)}
+              <span style="margin-left:auto;color:var(--green);font-family:'DM Mono',monospace;font-size:11px">≈${rm}kg</span>
+            </div>`;
+          }).join('')}
+        </div>`;
+      }).join('')}
+    </div>` : ''}
+  `);
+}
+
+// ========== DELETE ==========
+function deleteRecord(type, id) {
+  if (!confirm('この記録を削除しますか？')) return;
+  state[type] = state[type].filter(r => r.id !== id);
+  saveData(type, state[type]);
+  showToast('削除しました', '🗑️');
+  const renderers = { fieldtest: renderFieldTest, maxtest: renderMaxTest, weight: renderWeight };
+  if (renderers[type]) renderers[type]();
+}
+
+
+// ========== LIVE TRAINING (integrated with session recording) ==========
+let liveTimer = null;
+
+function live() {
+  setTopbarActions('');
+  renderLive();
+  if (liveTimer) clearInterval(liveTimer);
+  liveTimer = setInterval(() => {
+    if (state.currentSection === 'live') renderLive();
+  }, 10000);
+}
+
+function renderLive() {
+  const active = Object.entries(state.liveTraining);
+  const now = new Date();
+  const tabs = document.getElementById('live-tab-active') ? document.getElementById('live-tab-active').dataset.tab : 'active';
+
+  // Build active cards
+  const activeCards = active.map(([pid, info]) => {
+    const p = getPlayer(pid);
+    if (!p) return '';
+    const elapsed = Math.floor((now - new Date(info.startTime)) / 1000);
+    const mins = Math.floor(elapsed / 60);
+    const secs = elapsed % 60;
+    const exs = info.exercises || [];
+    return `
+      <div style="background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius-lg);padding:1.25rem">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+          <div class="player-avatar" style="background:${avatarColor(parseInt(p.id.slice(1)))}; width:36px;height:36px;font-size:13px">${initials(p.name)}</div>
+          <div style="flex:1">
+            <div style="font-size:14px;font-weight:700">${p.name}</div>
+            <div style="font-size:11px;color:var(--text3)">${(Array.isArray(p.position)?p.position:[p.position]).join("/")} / ${p.grade}年</div>
+          </div>
+          <div style="font-family:'DM Mono',monospace;font-size:26px;font-weight:700;color:var(--accent)" id="timer-${pid}">${String(mins).padStart(2,'0')}:${String(secs).padStart(2,'0')}</div>
+        </div>
+
+        ${exs.length > 0 ? `
+          <div style="display:flex;flex-direction:column;gap:3px;margin-bottom:10px">
+            ${exs.map((e,i) => `
+              <div style="display:flex;align-items:center;gap:6px;padding:4px 8px;background:var(--surface2);border-radius:6px;font-size:12px">
+                <span class="badge badge-blue" style="font-size:10px">${e.exercise}</span>
+                ${formatExerciseSets(e)}
+                <button onclick="removeLiveExercise('${pid}',${i})" style="margin-left:auto;background:none;border:none;color:var(--text3);cursor:pointer;font-size:12px">×</button>
+              </div>`).join('')}
+          </div>` : `<div style="font-size:12px;color:var(--text3);margin-bottom:10px">種目未入力</div>`}
+
+        <button class="btn btn-ghost btn-sm" style="width:100%;justify-content:center;margin-bottom:8px" onclick="openAddExerciseLive('${pid}')">＋ 種目を追加</button>
+        <button class="btn btn-danger" style="width:100%;justify-content:center;padding:8px" onclick="stopTraining('${pid}')">⏹ 終了・保存</button>
+      </div>`;
+  }).join('');
+
+  const inactivePlayers = state.players.filter(p => !state.liveTraining[p.id]);
+
+  // Recent sessions
+  const recentSessions = [...state.training].sort((a,b) => b.date.localeCompare(a.date) || (b.createdAt||'').localeCompare(a.createdAt||'')).slice(0, 20);
+
+  setContent(`
+    <div class="tabs" style="margin-bottom:1rem">
+      <button class="tab ${tabs!=='history'?'active':''}" id="live-tab-active" data-tab="active" onclick="switchLiveTab('active')">
+        <span style="display:inline-flex;align-items:center;gap:6px">
+          <span style="width:7px;height:7px;border-radius:50%;background:var(--red);display:inline-block;${active.length>0?'box-shadow:0 0 6px var(--red);animation:pulse 1.5s infinite':'opacity:.3'}"></span>
+          リアルタイム ${active.length > 0 ? `<span class="badge badge-red" style="font-size:10px">${active.length}</span>` : ''}
+        </span>
+      </button>
+      <button class="tab ${tabs==='history'?'active':''}" data-tab="history" onclick="switchLiveTab('history')">記録一覧</button>
+    </div>
+
+    <div id="live-panel-active" style="display:${tabs!=='history'?'block':'none'}">
+      ${active.length > 0 ? `
+        <div class="grid3" style="margin-bottom:1.5rem">${activeCards}</div>
+      ` : `
+        <div class="card" style="text-align:center;padding:2rem;margin-bottom:1.5rem">
+          <div style="font-size:36px;margin-bottom:.5rem">💤</div>
+          <div style="font-size:13px;color:var(--text3)">トレーニング中の選手はいません</div>
+        </div>
+      `}
+      <p style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.75rem">開始する（${inactivePlayers.length}名）</p>
+      <div class="grid3">
+        ${inactivePlayers.map(p => `
+          <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:.9rem;display:flex;align-items:center;justify-content:space-between;gap:8px">
+            <div style="display:flex;align-items:center;gap:8px;min-width:0">
+              <div class="player-avatar" style="background:${avatarColor(parseInt(p.id.slice(1)))}; width:30px;height:30px;font-size:11px;flex-shrink:0">${initials(p.name)}</div>
+              <div style="min-width:0">
+                <div style="font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${p.name}</div>
+                <div style="font-size:11px;color:var(--text3)">${(Array.isArray(p.position)?p.position:[p.position]).join("/")} / ${p.grade}年</div>
+              </div>
+            </div>
+            <button class="btn btn-green btn-sm" style="flex-shrink:0" onclick="startTraining('${p.id}')">▶ 開始</button>
+          </div>`).join('')}
+      </div>
+    </div>
+
+    <div id="live-panel-history" style="display:${tabs==='history'?'block':'none'}">
+      <div style="display:flex;gap:8px;margin-bottom:1rem;align-items:center;flex-wrap:wrap">
+        <select class="form-select" style="width:160px" id="hist-filter-player" onchange="applyHistFilter()">
+          <option value="">全選手</option>
+          ${state.players.map(p=>`<option value="${p.id}">${p.name}</option>`).join('')}
+        </select>
+        <span style="font-size:12px;color:var(--text3);margin-left:auto">${recentSessions.length}件</span>
+      </div>
+      <div id="hist-list">
+        ${renderSessionList(recentSessions)}
+      </div>
+    </div>
+  `);
+
+  startLiveTimers();
+}
+
+function renderSessionList(sessions) {
+  if (sessions.length === 0) return `<div class="empty"><div class="empty-icon">🏋️</div><div class="empty-text">記録がありません</div></div>`;
+  return sessions.map(s => {
+    const exs = s.exercises ? s.exercises : [{ exercise: s.exercise, weight: s.weight, reps: s.reps, sets: s.sets }];
+    return `
+      <div class="card" style="margin-bottom:.75rem">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+          <div style="display:flex;align-items:center;gap:8px">
+            <div class="player-avatar" style="background:${avatarColor(parseInt((s.playerId||'p0').slice(1)))}; width:28px;height:28px;font-size:10px">${initials(playerName(s.playerId))}</div>
+            <div>
+              <div style="font-size:13px;font-weight:600">${playerName(s.playerId)}</div>
+              <div style="font-size:11px;color:var(--text3)">${formatDate(s.date)} — ${exs.length}種目</div>
+            </div>
+          </div>
+          <button class="btn btn-danger btn-xs" onclick="deleteTrainingSession('${s.id}')">削除</button>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:3px">
+          ${exs.map(e => {
+            const rm = Math.round(e.weight*(1+e.reps/30));
+            return `<div style="display:flex;align-items:center;gap:6px;padding:4px 8px;background:var(--surface2);border-radius:6px;font-size:12px">
+              ${exerciseBadge(e.exercise,"font-size:10px;")}
+              ${formatExerciseSets(e)}
+              <span style="margin-left:auto;color:var(--green);font-size:11px;font-family:'DM Mono',monospace">≈${rm}kg</span>
+            </div>`;
+          }).join('')}
+        </div>
+        ${s.memo ? `<div style="font-size:11px;color:var(--text3);margin-top:6px">${s.memo}</div>` : ''}
+      </div>`;
+  }).join('');
+}
+
+function switchLiveTab(tab) {
+  document.getElementById('live-tab-active').dataset.tab = tab;
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  event.currentTarget.classList.add('active');
+  document.getElementById('live-panel-active').style.display = tab === 'active' ? 'block' : 'none';
+  document.getElementById('live-panel-history').style.display = tab === 'history' ? 'block' : 'none';
+}
+
+function applyHistFilter() {
+  const pid = document.getElementById('hist-filter-player').value;
+  let sessions = [...state.training].sort((a,b) => b.date.localeCompare(a.date));
+  if (pid) sessions = sessions.filter(s => s.playerId === pid);
+  document.getElementById('hist-list').innerHTML = renderSessionList(sessions.slice(0, 30));
+}
+
+function deleteTrainingSession(id) {
+  if (!confirm('このセッションを削除しますか？')) return;
+  state.training = state.training.filter(r => r.id !== id);
+  saveData('training', state.training);
+  showToast('削除しました', '🗑️');
+  applyHistFilter();
+}
+
+function startLiveTimers() {
+  if (window._liveSecTimer) clearInterval(window._liveSecTimer);
+  if (Object.keys(state.liveTraining).length === 0) return;
+  window._liveSecTimer = setInterval(() => {
+    if (state.currentSection !== 'live') { clearInterval(window._liveSecTimer); return; }
+    const now = new Date();
+    Object.entries(state.liveTraining).forEach(([pid, info]) => {
+      const el = document.getElementById('timer-' + pid);
+      if (!el) return;
+      const elapsed = Math.floor((now - new Date(info.startTime)) / 1000);
+      const mins = Math.floor(elapsed / 60);
+      const secs = elapsed % 60;
+      el.textContent = `${String(mins).padStart(2,'0')}:${String(secs).padStart(2,'0')}`;
+    });
+  }, 1000);
+}
+
+function startTraining(playerId) {
+  const p = getPlayer(playerId);
+  state.liveTraining[playerId] = { startTime: new Date().toISOString(), exercises: [] };
+  showToast(`${p.name} 開始`, '▶');
+  renderLive();
+}
+
+let _lvSets = [];
+
+function openAddExerciseLive(playerId) {
+  _lvSets = [];
+  openModal(`種目追加 — ${playerName(playerId)}`, `
+    <div class="form-group" style="margin-bottom:10px"><label class="form-label">種目</label>
+      ${makeExerciseCategorySelect('lv-ex', playerId)}
+    </div>
+    <div style="font-size:12px;font-weight:600;color:var(--text2);margin-bottom:6px">セット</div>
+    <div id="lv-sets-list" style="display:flex;flex-direction:column;gap:4px;margin-bottom:8px"></div>
+    <div style="display:flex;gap:6px;align-items:center">
+      <label style="display:flex;align-items:center;gap:4px;font-size:12px;cursor:pointer;color:var(--text2)">
+        <input type="checkbox" id="lv-bw" onchange="toggleWeightInput('lv-weight','lv-bw')"> 自重
+      </label>
+      <input class="form-input" type="number" id="lv-weight" placeholder="重量 kg" step="0.5" min="0" style="flex:1" />
+      <input class="form-input" type="number" id="lv-reps" placeholder="回数" min="1" style="flex:1" />
+      <button class="btn btn-ghost btn-sm" onclick="addLvSet()">＋ セット</button>
+    </div>
+  `, `<button class="btn btn-ghost" onclick="closeModal()">キャンセル</button><button class="btn btn-primary" onclick="saveLiveExercise('${playerId}')">追加</button>`);
+}
+
+function addLvSet() {
+  const isBW = document.getElementById('lv-bw') && document.getElementById('lv-bw').checked;
+  const weight = isBW ? '自重' : parseFloat(document.getElementById('lv-weight').value);
+  const reps = parseInt(document.getElementById('lv-reps').value);
+  if (!isBW && !weight) { alert('重量を入力してください'); return; }
+  if (!reps) { alert('回数を入力してください'); return; }
+  _lvSets.push({ weight, reps });
+  document.getElementById('lv-reps').value = '';
+  const el = document.getElementById('lv-sets-list');
+  if (el) el.innerHTML = _lvSets.map((s, i) => `
+    <div style="display:flex;align-items:center;gap:6px;padding:4px 8px;background:var(--surface2);border-radius:6px;font-size:12px">
+      <span style="color:var(--text3);min-width:20px">${i+1}</span>
+      <span class="td-mono">${s.weight === '自重' ? '自重' : s.weight+'kg'} × ${s.reps}回</span>
+      <button onclick="_lvSets.splice(${i},1);addLvSet.__refresh && addLvSet.__refresh()" style="margin-left:auto;background:none;border:none;color:var(--red);cursor:pointer">×</button>
+    </div>`).join('');
+}
+
+function saveLiveExercise(playerId) {
+  if (_lvSets.length === 0) { alert('セットを1つ以上追加してください'); return; }
+  if (!state.liveTraining[playerId]) return;
+  state.liveTraining[playerId].exercises = state.liveTraining[playerId].exercises || [];
+  state.liveTraining[playerId].exercises.push({
+    exercise: document.getElementById('lv-ex').value,
+    sets: [..._lvSets],
+  });
+  _lvSets = [];
+  closeModal();
+  renderLive();
+}
+
+function removeLiveExercise(playerId, idx) {
+  if (!state.liveTraining[playerId]) return;
+  state.liveTraining[playerId].exercises.splice(idx, 1);
+  renderLive();
+}
+
+function stopTraining(playerId) {
+  const p = getPlayer(playerId);
+  const info = state.liveTraining[playerId];
+  if (!info) return;
+  const exs = info.exercises || [];
+  if (exs.length > 0) {
+    const session = {
+      id: 'tr-' + Date.now(),
+      playerId,
+      date: today(),
+      exercises: exs,
+      memo: '',
+      createdAt: new Date().toISOString(),
+    };
+    state.training.push(session);
+    saveData('training', state.training);
+    showToast(`${p.name} 終了 — ${exs.length}種目を保存`, '✅');
+  } else {
+    showToast(`${p.name} 終了（種目なし）`, '⏹');
+  }
+  delete state.liveTraining[playerId];
+  renderLive();
+}
+
+
+
+
+// ========== EXERCISE MANAGER ==========
+let exMgrPlayerId = null;
+
+function exercisemgr() {
+  exMgrPlayerId = null;
+  setTopbarActions('');
+  renderExerciseMgr();
+}
+
+function renderExerciseMgr() {
+  const cats = Object.keys(EXERCISE_CATEGORIES);
+  const pid = exMgrPlayerId;
+  const pName = pid ? playerName(pid) : null;
+
+  setContent(`
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:1.25rem;flex-wrap:wrap">
+      <select class="form-select" style="width:180px" onchange="exMgrPlayerId=this.value||null;renderExerciseMgr()">
+        <option value="">選手を選択...</option>
+        ${state.players.map(p => `<option value="${p.id}" ${pid===p.id?'selected':''}>${p.name}</option>`).join('')}
+      </select>
+      ${pid ? `<span style="font-size:13px;color:var(--text2)"><strong>${pName}</strong> の種目メニューを編集中</span>` : ''}
+    </div>
+    ${!pid ? `<div class="card" style="text-align:center;padding:2rem"><div style="font-size:32px;margin-bottom:.5rem">👆</div><div style="font-size:13px;color:var(--text3)">上から選手を選んでください</div></div>` : ''}
+
+    ${!pid ? '' : cats.map(cat => {
+      const allExs = getExercisesForCategory(cat, pid);
+      // Determine type of each exercise for this context
+      const globalDeleted = state.customExercises['__deleted__'] || [];
+      const playerDeleted = pid ? ((state.playerExercises[pid] || {})['__deleted__'] || []) : [];
+      const playerCustom = pid ? ((state.playerExercises[pid] || {})[cat] || []) : [];
+      const globalCustom = state.customExercises[cat] || [];
+
+      const items = allExs.map(e => {
+        let type = 'base';
+        if (playerCustom.includes(e)) type = 'player';
+        else if (globalCustom.includes(e)) type = 'global';
+        return { name: e, type };
+      });
+
+      return `
+        <div class="card" style="margin-bottom:1rem">
+          <div class="card-title" style="margin-bottom:10px">
+            <span style="color:${(CATEGORY_COLORS[cat]||{}).color||'var(--text)'}">${cat}</span>
+            <span style="font-size:12px;color:var(--text3);font-weight:400">${items.length}種目</span>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:4px">
+            ${items.map(ex => `
+              <div style="display:flex;align-items:center;gap:8px;padding:6px 10px;background:var(--surface2);border-radius:var(--radius)">
+                <span style="font-size:13px;flex:1">${ex.name}</span>
+                ${ex.type==='player' ? '<span class="badge badge-green" style="font-size:10px">個人</span>'
+                  : ex.type==='global' ? '<span class="badge badge-blue" style="font-size:10px">共通追加</span>' : ''}
+                <button class="btn btn-danger btn-xs" onclick="deleteExercise('${cat}','${ex.name}','${ex.type}')">削除</button>
+              </div>`).join('')}
+          </div>
+          <button class="btn btn-ghost btn-sm" style="margin-top:10px;width:100%;justify-content:center" onclick="addExerciseManually('${cat}')">＋ 種目を追加</button>
+        </div>`;
+    }).join('')}
+  `);
+}
+
+function deleteExercise(cat, name, type) {
+  if (!confirm(`「${name}」を削除しますか？`)) return;
+  const pid = exMgrPlayerId;
+  if (type === 'player' && pid) {
+    state.playerExercises[pid][cat] = (state.playerExercises[pid][cat] || []).filter(e => e !== name);
+    saveData('playerExercises', state.playerExercises);
+  } else if (type === 'global') {
+    state.customExercises[cat] = (state.customExercises[cat] || []).filter(e => e !== name);
+    saveData('customExercises', state.customExercises);
+  } else {
+    // Hide base exercise
+    const store = pid ? 'playerExercises' : 'customExercises';
+    if (pid) {
+      if (!state.playerExercises[pid]) state.playerExercises[pid] = {};
+      if (!state.playerExercises[pid]['__deleted__']) state.playerExercises[pid]['__deleted__'] = [];
+      if (!state.playerExercises[pid]['__deleted__'].includes(cat + ':' + name))
+        state.playerExercises[pid]['__deleted__'].push(cat + ':' + name);
+      saveData('playerExercises', state.playerExercises);
+    } else {
+      if (!state.customExercises['__deleted__']) state.customExercises['__deleted__'] = [];
+      if (!state.customExercises['__deleted__'].includes(cat + ':' + name))
+        state.customExercises['__deleted__'].push(cat + ':' + name);
+      saveData('customExercises', state.customExercises);
+    }
+  }
+  showToast(`「${name}」を削除しました`, '🗑️');
+  renderExerciseMgr();
+}
+
+function addExerciseManually(cat) {
+  const pid = exMgrPlayerId;
+  const label = pid ? `${playerName(pid)} の ${cat}` : cat;
+  const name = prompt(label + ' の種目名を入力してください:');
+  if (!name || !name.trim()) return;
+  const trimmed = name.trim();
+  if (pid) {
+    if (!state.playerExercises[pid]) state.playerExercises[pid] = {};
+    if (!state.playerExercises[pid][cat]) state.playerExercises[pid][cat] = [];
+    if (!state.playerExercises[pid][cat].includes(trimmed)) {
+      state.playerExercises[pid][cat].push(trimmed);
+      saveData('playerExercises', state.playerExercises);
+      showToast(`「${trimmed}」を${playerName(pid)}に追加しました`);
+    }
+  } else {
+    if (!state.customExercises[cat]) state.customExercises[cat] = [];
+    if (!state.customExercises[cat].includes(trimmed)) {
+      state.customExercises[cat].push(trimmed);
+      saveData('customExercises', state.customExercises);
+      showToast(`「${trimmed}」を追加しました`);
+    }
+  }
+  renderExerciseMgr();
+}
+
+
+// ========== CONDITION MANAGEMENT ==========
+let condTab = 'check'; // 'injury' | 'check'
+
+function condition() {
+  setTopbarActions('');
+  renderCondition();
+}
+
+function renderCondition() {
+  const tabBar = `
+    <div class="tabs" style="margin-bottom:1rem">
+      <button class="tab ${condTab==='check'?'active':''}" onclick="condTab='check';renderCondition()">📋 状態チェック</button>
+      <button class="tab ${condTab==='injury'?'active':''}" onclick="condTab='injury';renderCondition()">🤕 怪我管理</button>
+    </div>`;
+  setContent(tabBar + (condTab === 'injury' ? renderInjuryPanel() : renderCondCheckPanel()));
+}
+
+// ---- 怪我管理 ----
+const INJURY_PASSWORD = 'tr2026!';
+let injuryUnlocked = false;
+let injurySearch = '';
+
+function renderInjuryPanel() {
+  // パスワード未入力なら認証画面
+  if (!injuryUnlocked) {
+    return `
+      <div style="max-width:320px;margin:3rem auto;text-align:center">
+        <div style="font-size:40px;margin-bottom:1rem">🔒</div>
+        <div style="font-size:15px;font-weight:600;margin-bottom:.5rem">パスワードを入力してください</div>
+        <div style="font-size:13px;color:var(--text3);margin-bottom:1.25rem">怪我管理はトレーナー限定のページです</div>
+        <input class="form-input" type="password" id="inj-pw-input" placeholder="パスワード"
+          style="text-align:center;margin-bottom:10px;letter-spacing:2px"
+          onkeydown="if(event.key==='Enter')checkInjuryPassword()" />
+        <button class="btn btn-primary" style="width:100%;justify-content:center" onclick="checkInjuryPassword()">解錠</button>
+        <div id="inj-pw-error" style="color:var(--red);font-size:12px;margin-top:8px"></div>
+      </div>`;
+  }
+
+  const q = injurySearch.toLowerCase();
+  let records = [...state.injuries].sort((a,b) => b.date.localeCompare(a.date));
+  if (q) records = records.filter(r => {
+    const p = getPlayer(r.playerId);
+    return p && p.name.toLowerCase().includes(q);
+  });
+
+  return `
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:1rem;flex-wrap:wrap">
+      <input class="search-input" placeholder="選手名で検索..." value="${injurySearch}"
+        oninput="injurySearch=this.value;renderCondition()" style="width:180px" />
+      <button class="btn btn-primary btn-sm" style="margin-left:auto" onclick="openInjuryForm()">＋ 怪我を記録</button>
+      <button class="btn btn-ghost btn-sm" onclick="injuryUnlocked=false;renderCondition()">🔒 ロック</button>
+    </div>
+    ${records.length === 0
+      ? '<div class="empty"><div class="empty-icon">🤕</div><div class="empty-text">怪我の記録がありません</div></div>'
+      : records.map(r => {
+          const p = getPlayer(r.playerId);
+          if (!p) return '';
+          const statusColor = r.status === '復帰済み' ? 'var(--green)' : r.status === '練習可（制限あり）' ? 'var(--yellow)' : r.status === '受診' ? 'var(--orange)' : 'var(--red)';
+          return `
+            <div class="card" style="margin-bottom:.75rem;border-left:3px solid ${statusColor}">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+                <div style="display:flex;align-items:center;gap:8px">
+                  <div class="player-avatar" style="background:${avatarColor(parseInt((p.id||'p0').slice(1)))}; width:30px;height:30px;font-size:11px">${initials(p.name)}</div>
+                  <div>
+                    <div style="font-size:14px;font-weight:600">${p.name}</div>
+                    <div style="font-size:11px;color:var(--text3)">${formatDate(r.date)}</div>
+                  </div>
+                </div>
+                <div style="display:flex;align-items:center;gap:6px">
+                  <span style="font-size:12px;font-weight:600;padding:3px 10px;border-radius:20px;background:${statusColor}22;color:${statusColor};border:1px solid ${statusColor}44">${r.status}</span>
+                  <button class="btn btn-ghost btn-xs" onclick="openInjuryEdit('${r.id}')">編集</button>
+                  <button class="btn btn-danger btn-xs" onclick="deleteInjury('${r.id}')">削除</button>
+                </div>
+              </div>
+              <div style="display:flex;gap:12px;font-size:13px;flex-wrap:wrap">
+                <div><span style="color:var(--text3)">部位：</span>${r.part}</div>
+                <div><span style="color:var(--text3)">種類：</span>${r.type}</div>
+                ${r.returnDate ? `<div><span style="color:var(--text3)">復帰予定：</span>${formatDate(r.returnDate)}</div>` : ''}
+              </div>
+              ${r.memo ? `<div style="font-size:12px;color:var(--text3);margin-top:6px">${r.memo}</div>` : ''}
+            </div>`;
+        }).join('')
+    }`;
+}
+
+function checkInjuryPassword() {
+  const inp = document.getElementById('inj-pw-input');
+  if (!inp) return;
+  if (inp.value === INJURY_PASSWORD) {
+    injuryUnlocked = true;
+    renderCondition();
+  } else {
+    const err = document.getElementById('inj-pw-error');
+    if (err) err.textContent = 'パスワードが違います';
+    inp.value = '';
+  }
+}
+
+const BODY_PARTS = ['頭・首','肩','肘','手首・手','胸・背中','腰','股関節','膝','足首','その他'];
+const INJURY_TYPES = ['打撲','捻挫','肉離れ','骨折','脱臼','疲労骨折','筋肉痛','その他'];
+const INJURY_STATUSES = ['受傷','受診','練習可（制限あり）','復帰済み'];
+
+function openInjuryForm(existing) {
+  const isEdit = !!existing;
+  openModal(isEdit ? '怪我記録を編集' : '怪我を記録', `
+    <div class="form-row form-row-2">
+      <div class="form-group"><label class="form-label">選手 *</label>
+        <select class="form-select" id="inj-player">
+          <option value="">選択...</option>
+          ${state.players.map(p=>`<option value="${p.id}" ${isEdit&&existing.playerId===p.id?'selected':''}>${p.name}</option>`).join('')}
+        </select>
+      </div>
+      <div class="form-group"><label class="form-label">日付</label>
+        <input class="form-input" type="date" id="inj-date" value="${isEdit?existing.date:today()}" />
+      </div>
+    </div>
+    <div class="form-row form-row-2">
+      <div class="form-group"><label class="form-label">部位</label>
+        <select class="form-select" id="inj-part">
+          ${BODY_PARTS.map(p=>`<option ${isEdit&&existing.part===p?'selected':''}>${p}</option>`).join('')}
+        </select>
+      </div>
+      <div class="form-group"><label class="form-label">種類</label>
+        <select class="form-select" id="inj-type">
+          ${INJURY_TYPES.map(t=>`<option ${isEdit&&existing.type===t?'selected':''}>${t}</option>`).join('')}
+        </select>
+      </div>
+    </div>
+    <div class="form-row form-row-2">
+      <div class="form-group"><label class="form-label">状態</label>
+        <select class="form-select" id="inj-status">
+          ${INJURY_STATUSES.map(s=>`<option ${isEdit&&existing.status===s?'selected':''}>${s}</option>`).join('')}
+        </select>
+      </div>
+      <div class="form-group"><label class="form-label">復帰予定日</label>
+        <input class="form-input" type="date" id="inj-return" value="${isEdit&&existing.returnDate?existing.returnDate:''}" />
+      </div>
+    </div>
+    <div class="form-group"><label class="form-label">メモ</label>
+      <input class="form-input" id="inj-memo" placeholder="詳細、治療内容など..." value="${isEdit?existing.memo||'':''}" />
+    </div>
+  `, `<button class="btn btn-ghost" onclick="closeModal()">キャンセル</button>
+      <button class="btn btn-primary" onclick="${isEdit?`saveInjuryEdit('${existing.id}')`:'saveInjury()'}">保存</button>`);
+}
+
+function saveInjury() {
+  const playerId = document.getElementById('inj-player').value;
+  if (!playerId) { alert('選手を選択してください'); return; }
+  const rec = {
+    id: 'inj-' + Date.now(),
+    playerId,
+    date: document.getElementById('inj-date').value,
+    part: document.getElementById('inj-part').value,
+    type: document.getElementById('inj-type').value,
+    status: document.getElementById('inj-status').value,
+    returnDate: document.getElementById('inj-return').value || null,
+    memo: document.getElementById('inj-memo').value,
+    createdAt: new Date().toISOString(),
+  };
+  state.injuries.push(rec);
+  saveData('injuries', state.injuries);
+  closeModal();
+  showToast('怪我を記録しました');
+  renderCondition();
+}
+
+function openInjuryEdit(id) {
+  const rec = state.injuries.find(r => r.id === id);
+  if (rec) openInjuryForm(rec);
+}
+
+function saveInjuryEdit(id) {
+  const rec = state.injuries.find(r => r.id === id);
+  if (!rec) return;
+  rec.playerId = document.getElementById('inj-player').value;
+  rec.date = document.getElementById('inj-date').value;
+  rec.part = document.getElementById('inj-part').value;
+  rec.type = document.getElementById('inj-type').value;
+  rec.status = document.getElementById('inj-status').value;
+  rec.returnDate = document.getElementById('inj-return').value || null;
+  rec.memo = document.getElementById('inj-memo').value;
+  saveData('injuries', state.injuries);
+  closeModal();
+  showToast('怪我記録を更新しました');
+  renderCondition();
+}
+
+function deleteInjury(id) {
+  if (!confirm('この記録を削除しますか？')) return;
+  state.injuries = state.injuries.filter(r => r.id !== id);
+  saveData('injuries', state.injuries);
+  showToast('削除しました', '🗑️');
+  renderCondition();
+}
+
+// ---- 状態チェック ----
+// 症状チェックボックス項目
+const SYMPTOM_ITEMS = ['頭痛', '吐き気', '腹痛', '喉の痛み', '発熱'];
+
+// ナビゲーション: [parentEventId | null, currentEventId | null]
+// null,null = トップ一覧
+// parentId,null = 親フォルダ内のサブフォルダ一覧
+// *,eventId = そのイベントの選手一覧
+let condNavStack = []; // [{id, name}]の履歴スタック
+
+function renderCondCheckPanel() {
+  if (condNavStack.length === 0) return renderCondEventList(null);
+  const current = condNavStack[condNavStack.length - 1];
+  if (current.type === 'folder') return renderCondEventList(current.id);
+  return renderCondEventDetail(current.id);
+}
+
+function condNavPush(item) { condNavStack.push(item); renderCondition(); }
+function condNavBack() { condNavStack.pop(); renderCondition(); }
+function condNavReset() { condNavStack = []; renderCondition(); }
+
+function typeColor(type) {
+  return type==='試合'?'var(--red)':type==='合宿'?'var(--purple)':type==='練習'?'var(--accent)':type==='フォルダ'?'var(--yellow)':'var(--text2)';
+}
+
+// ---- フォルダ/イベント一覧 ----
+function renderCondEventList(parentId) {
+  const parentIdStr = parentId || null;
+  const items = [...(state.condEvents||[])]
+    .filter(e => (e.parentId||null) === parentIdStr)
+    .sort((a,b) => b.date.localeCompare(a.date));
+
+  const breadcrumb = condNavStack.length > 0
+    ? `<div style="display:flex;align-items:center;gap:6px;margin-bottom:1rem;flex-wrap:wrap">
+        <button class="btn btn-ghost btn-sm" onclick="condNavBack()">← 戻る</button>
+        ${condNavStack.map((s,i) => `<span style="font-size:12px;color:var(--text3)">${i>0?'›':''} ${s.name}</span>`).join('')}
+      </div>` : '';
+
+  return `
+    ${breadcrumb}
+    <div style="display:flex;gap:6px;justify-content:flex-end;margin-bottom:1rem">
+      <button class="btn btn-ghost btn-sm" data-pid="${parentIdStr||''}" onclick="openCondEventForm('folder',this.dataset.pid||null)">📁 フォルダ作成</button>
+      <button class="btn btn-primary btn-sm" data-pid="${parentIdStr||''}" onclick="openCondEventForm('event',this.dataset.pid||null)">＋ イベント作成</button>
+    </div>
+    ${items.length === 0
+      ? `<div class="empty"><div class="empty-icon">📋</div><div class="empty-text">まだ何もありません</div></div>`
+      : items.map(ev => {
+          const isFolder = ev.type === 'フォルダ';
+          const checks = isFolder ? [] : (state.conditionChecks||[]).filter(c => c.eventId === ev.id);
+          const checkedCount = new Set(checks.map(c => c.playerId)).size;
+          const childCount = isFolder ? (state.condEvents||[]).filter(e => e.parentId === ev.id).length : 0;
+          const color = typeColor(ev.type);
+          return `
+            <div class="card" style="margin-bottom:.75rem;cursor:pointer;border-left:3px solid ${color}"
+              data-evid="${ev.id}" data-evname="${ev.name.replace(/"/g,'&quot;')}" data-evtype="${isFolder?'folder':'detail'}"
+              onclick="condNavPush({id:this.dataset.evid,name:this.dataset.evname,type:this.dataset.evtype})"
+            >
+              <div style="display:flex;align-items:center;justify-content:space-between">
+                <div style="flex:1;min-width:0">
+                  <div style="display:flex;align-items:center;gap:6px;margin-bottom:3px">
+                    <span style="font-size:16px">${isFolder?'📁':'📋'}</span>
+                    <span style="font-size:12px;font-weight:600;padding:2px 8px;border-radius:12px;background:${color}22;color:${color}">${ev.type}</span>
+                    <span style="font-size:15px;font-weight:700">${ev.name}</span>
+                  </div>
+                  <div style="font-size:12px;color:var(--text3)">${formatDate(ev.date)} ${isFolder ? `— ${childCount}項目` : `— ${checkedCount}/${state.players.length}名 記録済み`}</div>
+                </div>
+                <div style="display:flex;align-items:center;gap:6px">
+                  ${!isFolder ? `<div style="text-align:right"><div style="font-size:14px;font-weight:700;color:${checkedCount===state.players.length?'var(--green)':'var(--text2)'}">${state.players.length?Math.round(checkedCount/state.players.length*100):0}%</div></div>` : ''}
+                  <span style="font-size:20px;color:var(--text3)">›</span>
+                </div>
+              </div>
+            </div>`;
+        }).join('')
+    }`;
+}
+
+function openCondEventForm(createType, parentId) {
+  const isFolder = createType === 'folder';
+  openModal(isFolder ? 'フォルダを作成' : 'イベントを作成', `
+    <div class="form-group"><label class="form-label">${isFolder?'フォルダ名':'イベント名'} *</label>
+      <input class="form-input" id="cev-name" placeholder="${isFolder?'例: 春季リーグ、夏合宿':'例: 試合前、試合後、1日目'}" />
+    </div>
+    <div class="form-row form-row-2">
+      <div class="form-group"><label class="form-label">日付</label>
+        <input class="form-input" type="date" id="cev-date" value="${today()}" />
+      </div>
+      ${!isFolder ? `<div class="form-group"><label class="form-label">種類</label>
+        <select class="form-select" id="cev-type">
+          <option>練習</option><option>試合</option><option>合宿</option><option>その他</option>
+        </select>
+      </div>` : ''}
+    </div>
+    <div class="form-group"><label class="form-label">メモ</label>
+      <input class="form-input" id="cev-memo" placeholder="補足情報..." />
+    </div>
+  `, `<button class="btn btn-ghost" onclick="closeModal()">キャンセル</button>
+     <button class="btn btn-primary" id="cev-save-btn" data-type="${createType}" data-pid="${parentId||''}" onclick="saveCondEvent(this.dataset.type,this.dataset.pid||null)">作成</button>`);
+}
+
+function saveCondEvent(createType, parentId) {
+  const name = document.getElementById('cev-name').value.trim();
+  if (!name) { alert('名前を入力してください'); return; }
+  const isFolder = createType === 'folder';
+  const typeEl = document.getElementById('cev-type');
+  const ev = {
+    id: 'cev-' + Date.now(),
+    name,
+    date: document.getElementById('cev-date').value,
+    type: isFolder ? 'フォルダ' : (typeEl ? typeEl.value : 'その他'),
+    parentId: parentId || null,
+    memo: document.getElementById('cev-memo').value,
+    createdAt: new Date().toISOString(),
+  };
+  if (!Array.isArray(state.condEvents)) state.condEvents = [];
+  state.condEvents.push(ev);
+  saveData('condEvents', state.condEvents);
+  closeModal();
+  showToast(`「${name}」を作成しました`);
+  if (!isFolder) condNavPush({id: ev.id, name: ev.name, type: 'detail'});
+  else renderCondition();
+}
+
+// ---- イベント詳細（選手一覧） ----
+function renderCondEventDetail(eventId) {
+  const ev = (state.condEvents||[]).find(e => e.id === eventId);
+  if (!ev) { condNavBack(); return renderCondCheckPanel(); }
+  if (!Array.isArray(state.conditionChecks)) state.conditionChecks = [];
+  const checks = state.conditionChecks.filter(c => c.eventId === eventId);
+  const checkedCount = new Set(checks.map(c => c.playerId)).size;
+  const color = typeColor(ev.type);
+
+  const breadcrumb = `<div style="display:flex;align-items:center;gap:6px;margin-bottom:1rem;flex-wrap:wrap">
+    <button class="btn btn-ghost btn-sm" onclick="condNavBack()">← 戻る</button>
+    ${condNavStack.map(s => `<span style="font-size:12px;color:var(--text3)">› ${s.name}</span>`).join('')}
+    <button class="btn btn-danger btn-xs" style="margin-left:auto" onclick="deleteCondEvent('${ev.id}')">削除</button>
+  </div>`;
+
+  return `${breadcrumb}
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:1rem">
+      <span style="font-size:12px;padding:2px 8px;border-radius:12px;background:${color}22;color:${color};font-weight:600">${ev.type}</span>
+      <span style="font-size:16px;font-weight:700">${ev.name}</span>
+      <span style="font-size:12px;color:var(--text3)">${formatDate(ev.date)}</span>
+      <span style="font-size:13px;color:var(--text2);margin-left:auto">${checkedCount}/${state.players.length}名</span>
+    </div>
+    ${state.players.map(p => {
+      const check = checks.find(c => c.playerId === p.id);
+      const symptoms = check ? (check.symptoms || []) : [];
+      const hasInjury = check && check.injuryNote;
+      return `
+        <div class="card" style="margin-bottom:.5rem">
+          <div style="display:flex;align-items:center;gap:8px">
+            <div class="player-avatar" style="background:${avatarColor(parseInt((p.id||'p0').slice(1)))}; width:28px;height:28px;font-size:10px">${initials(p.name)}</div>
+            <div style="flex:1;min-width:0">
+              <div style="font-size:13px;font-weight:600">${p.name}</div>
+              ${check ? `<div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:3px">
+                ${symptoms.length > 0 ? symptoms.map(s => `<span style="font-size:10px;padding:1px 6px;border-radius:10px;background:rgba(248,113,113,0.15);color:#f87171;border:1px solid rgba(248,113,113,0.3)">${s}</span>`).join('') : '<span style="font-size:11px;color:var(--green)">症状なし</span>'}
+                ${check.otherSymptom ? `<span style="font-size:10px;padding:1px 6px;border-radius:10px;background:rgba(251,146,60,0.15);color:var(--orange)">${check.otherSymptom}</span>` : ''}
+                ${hasInjury ? `<span style="font-size:10px;padding:1px 6px;border-radius:10px;background:rgba(167,139,250,0.15);color:var(--purple)">🤕 怪我あり</span>` : ''}
+              </div>` : ''}
+            </div>
+            ${check
+              ? `<button class="btn btn-ghost btn-xs" onclick="openCondCheckForm('${p.id}','${eventId}')">編集</button>`
+              : `<button class="btn btn-green btn-xs" onclick="openCondCheckForm('${p.id}','${eventId}')">入力</button>`}
+          </div>
+          ${check && (check.memo || check.injuryNote) ? `
+            <div style="font-size:11px;color:var(--text3);margin-top:4px;padding-left:36px">
+              ${check.memo ? `メモ：${check.memo}` : ''}
+              ${check.injuryNote ? `<br>🤕 怪我：${check.injuryNote}` : ''}
+            </div>` : ''}
+        </div>`;
+    }).join('')}`;
+}
+
+function deleteCondEvent(id) {
+  if (!confirm('削除しますか？関連する記録もすべて削除されます。')) return;
+  // 子イベントも再帰削除
+  const toDelete = new Set();
+  const collect = (pid) => {
+    toDelete.add(pid);
+    (state.condEvents||[]).filter(e => e.parentId === pid).forEach(e => collect(e.id));
+  };
+  collect(id);
+  state.condEvents = (state.condEvents||[]).filter(e => !toDelete.has(e.id));
+  state.conditionChecks = (state.conditionChecks||[]).filter(c => !toDelete.has(c.eventId));
+  saveData('condEvents', state.condEvents);
+  saveData('conditionChecks', state.conditionChecks);
+  condNavBack();
+  showToast('削除しました', '🗑️');
+  renderCondition();
+}
+
+// ---- 状態チェック入力フォーム ----
+function openCondCheckForm(presetPlayerId, eventId) {
+  const ev = eventId ? (state.condEvents||[]).find(e => e.id === eventId) : null;
+  if (!Array.isArray(state.conditionChecks)) state.conditionChecks = [];
+  const existing = presetPlayerId && eventId
+    ? state.conditionChecks.find(c => c.playerId === presetPlayerId && c.eventId === eventId)
+    : null;
+  const exSymptoms = existing ? (existing.symptoms || []) : [];
+
+  openModal(`状態チェック${ev ? ' — ' + ev.name : ''}`, `
+    <div class="form-group" style="margin-bottom:1rem"><label class="form-label">選手 *</label>
+      <select class="form-select" id="cond-player">
+        <option value="">選択...</option>
+        ${state.players.map(p=>`<option value="${p.id}" ${presetPlayerId===p.id?'selected':''}>${p.name}</option>`).join('')}
+      </select>
+    </div>
+
+    <div style="font-size:13px;font-weight:600;margin-bottom:8px">📋 体調チェック（該当するものをタップ）</div>
+    <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:1rem">
+      ${SYMPTOM_ITEMS.map(s => {
+        const on = exSymptoms.includes(s);
+        return `<div class="symptom-chip" data-sym="${s}" data-on="${on?'1':'0'}" onclick="toggleSymptom(this)"
+          style="padding:6px 12px;border-radius:20px;font-size:13px;font-weight:500;cursor:pointer;transition:all 0.15s;border:2px solid ${on?'#f87171':'var(--border2)'};color:${on?'#f87171':'var(--text2)'};background:${on?'rgba(248,113,113,0.15)':'transparent'}">
+          ${s}
+        </div>`;
+      }).join('')}
+    </div>
+    <div class="form-group" style="margin-bottom:1rem">
+      <label class="form-label">その他の症状</label>
+      <input class="form-input" id="cond-other-symptom" placeholder="自由記入..." value="${existing&&existing.otherSymptom?existing.otherSymptom:''}" />
+    </div>
+
+    <div style="font-size:13px;font-weight:600;margin-bottom:8px">🤕 怪我</div>
+    <div class="form-group">
+      <input class="form-input" id="cond-inj-note" placeholder="怪我がある場合は自由記入（例：左膝打撲）" value="${existing&&existing.injuryNote?existing.injuryNote:''}" />
+    </div>
+
+    <div class="form-group"><label class="form-label">その他メモ</label>
+      <input class="form-input" id="cond-memo" placeholder="自由記入..." value="${existing?existing.memo||'':''}" />
+    </div>
+  `, `<button class="btn btn-ghost" onclick="closeModal()">キャンセル</button>
+      <button class="btn btn-primary" onclick="saveCondCheck('${eventId||''}')">保存</button>`);
+}
+
+function toggleSymptom(el) {
+  const active = el.dataset.on === '1';
+  el.dataset.on = active ? '0' : '1';
+  el.style.borderColor = active ? 'var(--border2)' : '#f87171';
+  el.style.color = active ? 'var(--text2)' : '#f87171';
+  el.style.background = active ? 'transparent' : 'rgba(248,113,113,0.15)';
+}
+
+function toggleInjuryFields() {}
+
+function selectCondLevel(el) {
+  // kept for compat
+}
+
+function saveCondCheck(eventId) {
+  const playerId = document.getElementById('cond-player').value;
+  if (!playerId) { alert('選手を選択してください'); return; }
+  const ev = eventId ? (state.condEvents||[]).find(e => e.id === eventId) : null;
+  const date = ev ? ev.date : today();
+
+  const symptoms = [...document.querySelectorAll('.symptom-chip[data-on="1"]')].map(c => c.dataset.sym);
+  const otherSymptom = document.getElementById('cond-other-symptom') ? document.getElementById('cond-other-symptom').value.trim() : '';
+  const injuryNote = document.getElementById('cond-inj-note') ? document.getElementById('cond-inj-note').value.trim() : '';
+  const injuryPart = null;
+  const injuryType = null;
+
+  if (!Array.isArray(state.conditionChecks)) state.conditionChecks = [];
+  const idx = state.conditionChecks.findIndex(c =>
+    c.playerId === playerId && (eventId ? c.eventId === eventId : c.date === date)
+  );
+  const rec = {
+    id: 'cond-' + playerId + '-' + (eventId || date),
+    playerId, date,
+    eventId: eventId || null,
+    symptoms, otherSymptom,
+    injuryPart, injuryType, injuryNote,
+    memo: document.getElementById('cond-memo') ? document.getElementById('cond-memo').value : '',
+    createdAt: new Date().toISOString(),
+  };
+  if (idx >= 0) state.conditionChecks[idx] = rec;
+  else state.conditionChecks.push(rec);
+  saveData('conditionChecks', state.conditionChecks);
+  closeModal();
+  showToast('状態を記録しました');
+  renderCondition();
+}
+
+// ========== START ==========
+init();
+</script>
+</body>
+</html>
