@@ -637,11 +637,6 @@ function dashboard() {
   setContent(`
     <div class="stats-row">
       <div class="stat-card">
-        <div class="stat-label">本日出席</div>
-        <div class="stat-val" style="color:var(--green)">${presentToday}<span style="font-size:14px;color:var(--text3)">/${totalP}</span></div>
-        <div class="stat-sub">出席率 ${totalP ? Math.round(presentToday/totalP*100) : 0}%</div>
-      </div>
-      <div class="stat-card">
         <div class="stat-label">登録選手数</div>
         <div class="stat-val">${totalP}</div>
         <div class="stat-sub">アクティブ</div>
@@ -1899,10 +1894,20 @@ function renderPlayerDetail(playerId) {
         <div style="font-size:13px;color:var(--text3)">${p.grade}年 / ${(Array.isArray(p.position)?p.position:[p.position]).join("/")} / #${p.number}${p.height ? ' / ' + p.height + 'cm' : ''}</div>
       </div>
     </div>
-    ${p.comment ? `<div class="card" style="margin-bottom:1rem;border-left:3px solid var(--accent)">
-      <div style="font-size:12px;font-weight:600;color:var(--text3);margin-bottom:4px">コメント</div>
-      <div style="font-size:14px;line-height:1.7;white-space:pre-wrap">${p.comment}</div>
-    </div>` : ''}
+    <div class="card" style="margin-bottom:1rem;border-left:3px solid var(--accent)">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+        <div style="font-size:12px;font-weight:600;color:var(--text3)">コメント・メモ</div>
+        <button class="btn btn-ghost btn-xs" onclick="toggleCommentEdit('${p.id}')">✏️ 編集</button>
+      </div>
+      <div id="comment-view-${p.id}" style="font-size:14px;line-height:1.7;white-space:pre-wrap;color:${p.comment?'var(--text)':'var(--text3)'}">${p.comment||'未入力'}</div>
+      <div id="comment-edit-${p.id}" style="display:none">
+        <textarea class="form-input" id="comment-input-${p.id}" rows="4" style="resize:vertical;margin-bottom:8px;width:100%">${p.comment||''}</textarea>
+        <div style="display:flex;gap:6px;justify-content:flex-end">
+          <button class="btn btn-ghost btn-sm" onclick="toggleCommentEdit('${p.id}')">キャンセル</button>
+          <button class="btn btn-primary btn-sm" onclick="savePlayerComment('${p.id}')">保存</button>
+        </div>
+      </div>
+    </div>
     <div class="stats-row">
       <div class="stat-card">
         <div class="stat-label">出席率</div>
@@ -2878,6 +2883,38 @@ function saveCondCheck(eventId) {
   closeModal();
   showToast('状態を記録しました');
   renderCondition();
+}
+
+
+function toggleCommentEdit(playerId) {
+  const view = document.getElementById('comment-view-' + playerId);
+  const edit = document.getElementById('comment-edit-' + playerId);
+  if (!view || !edit) return;
+  const isEditing = edit.style.display !== 'none';
+  view.style.display = isEditing ? 'block' : 'none';
+  edit.style.display = isEditing ? 'none' : 'block';
+  if (!isEditing) {
+    const inp = document.getElementById('comment-input-' + playerId);
+    if (inp) inp.focus();
+  }
+}
+
+function savePlayerComment(playerId) {
+  const p = getPlayer(playerId);
+  if (!p) return;
+  const inp = document.getElementById('comment-input-' + playerId);
+  if (!inp) return;
+  p.comment = inp.value.trim();
+  saveData('players', state.players);
+  const view = document.getElementById('comment-view-' + playerId);
+  const edit = document.getElementById('comment-edit-' + playerId);
+  if (view) {
+    view.textContent = p.comment || '未入力';
+    view.style.color = p.comment ? 'var(--text)' : 'var(--text3)';
+    view.style.display = 'block';
+  }
+  if (edit) edit.style.display = 'none';
+  showToast('コメントを保存しました');
 }
 
 // ========== START ==========
